@@ -1,0 +1,7 @@
+model_cpts
+*.pyc
+.ipynb_checkpoints
+TODO.txt
+configs
+raw_data_sets
+__pycache__
