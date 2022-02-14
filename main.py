@@ -46,7 +46,7 @@ if __name__ == '__main__':
         checkpoint_folder.mkdir(parents=True, exist_ok=True)
         shutil.copy(Path(args.train_path), checkpoint_folder)
         
-        train(total_epoch, model, loss_fn, optimizer, checkpoint_folder, device, train_loader)
+        train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device, train_loader)
 
     else:
         print("No training configuration provided")

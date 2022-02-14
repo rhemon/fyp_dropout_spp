@@ -2,7 +2,7 @@ import torch
 from pathlib import Path
 
 
-def train(total_epoch, model, loss_fn, optimizer, checkpoint_folder, device, train_loader):
+def train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device, train_loader):
     ep = 1
     cpt_track_step = 0
     for epoch in range(total_epoch):
