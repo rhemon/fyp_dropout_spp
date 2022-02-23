@@ -1,0 +1,13 @@
+
+{
+    "MODEL": "GritNetNoDropout",
+    "DATASET_PROCESSOR": "OneHotKeatsDatasetProcessor",
+    "OUTPUT_TYPE": "BINARY",
+    "COLUMNS_TYPE": "OHV_ALL",
+    "LOSS": "BCELoss",
+    "OPTIMIZER": "SGD",
+    "LR": 0.001,
+    "EPOCH": 100,
+    "CPT_EVERY": 20,
+    "EVALUATION_METHODS": ["ACCURACY", "CONFUSION_MATRIX", "PRECISION", "RECALL", "F1_SCORE", "GMEAN"]
+}

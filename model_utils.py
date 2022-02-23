@@ -5,6 +5,7 @@ from pathlib import Path
 def train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device, train_loader):
     ep = 1
     cpt_track_step = 0
+    model.train()
     for epoch in range(total_epoch):
         for batch_idx, (event_x, event_time_x, lens, result) in enumerate(train_loader):
             event_x = event_x.type(torch.LongTensor).to(device)
@@ -30,3 +31,19 @@ def train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device
                 print(f'epoch: {epoch + 1} step: {batch_idx + 1}/{len(train_loader)} loss: {loss}')
                 cpt_track_step = 0
         ep += 1
+
+def predict(model, dataset):
+    y_preds = []
+    targets = []
+    with torch.no_grad():
+        model.eval()
+        
+        for each_record in dataset:
+            each_record = [torch.unsqueeze(each, 0) for each in each_record]
+            each_record[0] = each_record[0].type(torch.LongTensor).to(device)
+            each_record[1] = each_record[1].type(torch.LongTensor).to(device)
+            pred = model(*each_record[:3])
+            y_preds.append(pred)
+            targets.append(each_record[-1])
+
+    return torch.cat(y_preds), torch.cat(targets)

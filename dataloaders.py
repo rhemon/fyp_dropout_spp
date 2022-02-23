@@ -170,10 +170,9 @@ class OneHotKeatsDatasetProcessor:
         x_test, l_test, y_test = shuffle(x_test, l_test, y_test, random_state=0)
 
         train_dataset = torch.utils.data.TensorDataset(x_train[:,:,0], x_train[:,:,1], l_train, y_train)
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32)
+        
 
         test_dataset = torch.utils.data.TensorDataset(x_test[:,:,0], x_test[:,:,1], l_test, y_test)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1)
+        # test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1)
 
-        return train_loader, test_loader
-    
+        return train_dataset, test_dataset   

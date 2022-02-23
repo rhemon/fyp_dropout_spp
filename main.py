@@ -10,7 +10,8 @@ import torch.nn as nn
 import torch.optim as optim
 import shutil
 
-from train import train
+from model_utils import train, predict
+from evaluators import get_evaluation_methods
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-tp", "--train-path", help="Path to training json file")
@@ -32,7 +33,8 @@ if __name__ == '__main__':
         model = getattr(importlib.import_module('models'), cfg.MODEL)(cfg).to(device)
         dataprocessor = getattr(importlib.import_module('dataloaders'), cfg.DATASET_PROCESSOR)(cfg)
 
-        train_loader, test_loader = dataprocessor.load_dataset()
+        train_dataset, test_dataset = dataprocessor.load_dataset()
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32)
 
         lr = cfg.LR
         total_epoch = cfg.EPOCH
@@ -47,6 +49,23 @@ if __name__ == '__main__':
         shutil.copy(Path(args.train_path), checkpoint_folder)
         
         train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device, train_loader)
+
+        train_preds, train_targets = predict(model, train_dataset)
+        test_preds, test_targets = predict(model, test_dataset)
+        evaluation_methods = get_evaluation_methods(cfg)
+        evaluation_result = "Train\n"
+        for each_method in evaluation_methods:
+            evaluation_result += each_method(train_preds, train_targets)
+        evaluation_methods += "\n\nTest\n"
+        for each_method in evaluation_methods:
+            evaluation_result += each_method(test_preds, test_targets)
+        
+        with open(checkpoint_folder / Path("results.txt"), "w") as result_file:
+            result_file.writelines(evaluation_result)
+        
+
+        # Train set evaluation
+        
 
     else:
         print("No training configuration provided")
