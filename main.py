@@ -13,8 +13,15 @@ import shutil
 from model_utils import train, predict
 from evaluators import get_evaluation_methods
 
+import numpy as np
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-tp", "--train-path", help="Path to training json file")
+
+# Seed 
+torch.manual_seed(123456)
+torch.cuda.manual_seed(123456)
+np.random.seed(123456)
 
 
 # Setting devices
@@ -29,8 +36,15 @@ if __name__ == '__main__':
         with open(args.train_path) as cfg_file:
             cfg = json.load(cfg_file, object_hook=lambda d: SimpleNamespace(**d))
         
-
-        model = getattr(importlib.import_module('models'), cfg.MODEL)(cfg).to(device)
+        try:
+            if cfg.DROPOUT == "Dropout":
+                dropout= nn.Dropout(p=cfg.DROPOUT_PROB)
+            else:
+                dropout = getattr(importlib.import_module('dropouts'), cfg.DROPOUT)(cfg)
+        except AttributeError:
+            dropout = None
+            cfg.DROPOUT = "None"
+        model = getattr(importlib.import_module('models'), cfg.MODEL)(cfg, dropout=dropout).to(device)
         dataprocessor = getattr(importlib.import_module('dataloaders'), cfg.DATASET_PROCESSOR)(cfg)
 
         train_dataset, test_dataset = dataprocessor.load_dataset()
@@ -42,7 +56,7 @@ if __name__ == '__main__':
         optimizer = getattr(optim, cfg.OPTIMIZER)(model.parameters(), lr=lr)
 
 
-        model_desc = Path(cfg.MODEL + "_" + cfg.LOSS)
+        model_desc = Path(cfg.MODEL + "_" + cfg.DROPOUT + "_" + cfg.LOSS)
         time_stamp =  datetime.datetime.now().strftime("%m-%d-%Y-%H-%M-%S")
         checkpoint_folder = Path("model_cpts") / model_desc / Path(time_stamp)
         checkpoint_folder.mkdir(parents=True, exist_ok=True)
@@ -63,10 +77,5 @@ if __name__ == '__main__':
         
         with open(checkpoint_folder / Path("results.txt"), "w") as result_file:
             result_file.writelines(evaluation_result)
-        
-
-        # Train set evaluation
-        
-
     else:
         print("No training configuration provided")

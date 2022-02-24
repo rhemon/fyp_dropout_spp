@@ -5,11 +5,11 @@ import torch.nn.functional as F
 # Setting devices
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-class GritNetNoDropout(nn.Module):
+class GritNet(nn.Module):
 
-    def __init__(self, cfg, event_dim=1113, embedding_dim=2048, hidden_dim=128, target_size=1, batch_size=32):
+    def __init__(self, cfg, event_dim=1113, embedding_dim=2048, hidden_dim=128, target_size=1, batch_size=32, dropout=None):
         
-        super(GritNetNoDropout, self).__init__()
+        super(GritNet, self).__init__()
         
         self.event_dim = event_dim
         self.embedding_dim = embedding_dim
@@ -20,7 +20,7 @@ class GritNetNoDropout(nn.Module):
         self.embeddings = nn.Embedding(event_dim, embedding_dim)
 
         self.blstm = nn.LSTM(embedding_dim*2, hidden_dim, bidirectional=True, batch_first=True)
-
+        self.dropout = dropout
         self.dense = nn.Linear(hidden_dim*2, target_size)
         self.sigmoid = nn.Sigmoid()
         
@@ -43,7 +43,10 @@ class GritNetNoDropout(nn.Module):
         blstm_output, _ = self.blstm(packed_x, (h0, c0))
         
         x, _ = torch.nn.utils.rnn.pad_packed_sequence(blstm_output, batch_first=True)
-        
+
+        if self.dropout is not None:
+            x = self.dropout(x)
+
         gmp_output = torch.max(x, 1, keepdim=False)[0] # batch_size, 256 ? 
 
         return self.sigmoid(self.dense(gmp_output))
