@@ -3,7 +3,8 @@ from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precisio
 from imblearn.metrics import geometric_mean_score as gmean_score
 
 def confusion_matrix_dict(y_predicted, y_target):
-    tn, fp, fn, tp = confusion_matrix(y_target, y_predicted)
+    cm = confusion_matrix(y_target, y_predicted)
+    tn, fp, fn, tp = cm[0, 0], cm[0,1], cm[1,0], cm[1,1]
     return f"TN = {tn}\nTP = {tp}\nFN = {fn}\nFP = {fp}\n"
     
 
@@ -38,7 +39,7 @@ def get_evaluation_methods(cfg):
         elif each == "PRECISION":
             methods.append(get_precision)
         elif each == "RECALL" or each == "UAR":
-            methods.appendd(get_recall)
+            methods.append(get_recall)
         elif each == "GMEAN":
             methods.append(get_gmean)
         else:

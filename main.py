@@ -44,19 +44,20 @@ if __name__ == '__main__':
 
         model_desc = Path(cfg.MODEL + "_" + cfg.LOSS)
         time_stamp =  datetime.datetime.now().strftime("%m-%d-%Y-%H-%M-%S")
-        checkpoint_folder = model_desc / Path(time_stamp)
+        checkpoint_folder = Path("model_cpts") / model_desc / Path(time_stamp)
         checkpoint_folder.mkdir(parents=True, exist_ok=True)
         shutil.copy(Path(args.train_path), checkpoint_folder)
         
         train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device, train_loader)
 
-        train_preds, train_targets = predict(model, train_dataset)
-        test_preds, test_targets = predict(model, test_dataset)
+        train_preds, train_targets = predict(model, train_dataset, device)
+        test_preds, test_targets = predict(model, test_dataset, device)
         evaluation_methods = get_evaluation_methods(cfg)
+        print(test_preds.shape, test_targets.shape)
         evaluation_result = "Train\n"
         for each_method in evaluation_methods:
             evaluation_result += each_method(train_preds, train_targets)
-        evaluation_methods += "\n\nTest\n"
+        evaluation_result += "\n\nTest\n"
         for each_method in evaluation_methods:
             evaluation_result += each_method(test_preds, test_targets)
         

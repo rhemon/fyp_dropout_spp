@@ -1,12 +1,16 @@
 import torch
 from pathlib import Path
-
+import matplotlib.pyplot as plt
 
 def train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device, train_loader):
     ep = 1
     cpt_track_step = 0
     model.train()
+    all_losses = []
+    epoch_losses = []
+
     for epoch in range(total_epoch):
+        batch_losses = []
         for batch_idx, (event_x, event_time_x, lens, result) in enumerate(train_loader):
             event_x = event_x.type(torch.LongTensor).to(device)
             event_time_x = event_time_x.type(torch.LongTensor).to(device)
@@ -15,10 +19,12 @@ def train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device
     #         result = result.type(torch.LongTensor)
             scores = model(event_x, event_time_x, lens).squeeze(1)
             loss = loss_fn(scores, result)
+            all_losses.append(loss.item())
+            batch_losses.append(loss.item())
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            checkpoint_name = checkpoint_folder / Path(str(epoch)+"_"+str(batch_idx)+".pt")
+            checkpoint_name = checkpoint_folder / Path("checkpoint_e"+str(epoch)+"_b"+str(batch_idx)+".pt")
             cpt_track_step += 1
             if cpt_track_step % cfg.CPT_EVERY == 0:
                 torch.save({
@@ -31,8 +37,23 @@ def train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device
                 print(f'epoch: {epoch + 1} step: {batch_idx + 1}/{len(train_loader)} loss: {loss}')
                 cpt_track_step = 0
         ep += 1
+        epoch_losses.append(sum(batch_losses)/len(batch_losses))
+    checkpoint_name = checkpoint_folder / Path("model.pt")
+    torch.save({
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                }, checkpoint_name)
 
-def predict(model, dataset):
+    plt.figure(0)          
+    plt.plot([i for i in range(len(all_losses))], all_losses)
+    plt.savefig(checkpoint_folder / Path("all_losses.png"))
+    
+    plt.figure(1)
+    plt.plot([i for i in range(len(epoch_losses))], epoch_losses)
+    plt.savefig(checkpoint_folder / Path("epoch_losses.png"))
+    
+
+def predict(model, dataset, device, threshold=0.5):
     y_preds = []
     targets = []
     with torch.no_grad():
@@ -46,4 +67,4 @@ def predict(model, dataset):
             y_preds.append(pred)
             targets.append(each_record[-1])
 
-    return torch.cat(y_preds), torch.cat(targets)
+    return torch.squeeze(torch.cat(y_preds).cpu() > threshold, 1), torch.cat(targets).cpu()
