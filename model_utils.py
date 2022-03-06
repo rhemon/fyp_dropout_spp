@@ -23,6 +23,13 @@ def train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device
             batch_losses.append(loss.item())
             optimizer.zero_grad()
             loss.backward()
+
+            if cfg.DROPOUT == "GradBasedDropout":
+                model.forward_ih_keep_prob = torch.sigmoid(model.dense_ih_forward.weight.grad.detach().sum(dim=1)).to(device)
+                model.forward_hh_keep_prob =  torch.sigmoid(model.dense_hh_forward.weight.grad.detach().sum(axis=1)).to(device)
+                model.backward_ih_keep_prob = torch.sigmoid(model.dense_ih_backward.weight.grad.detach().sum(axis=1)).to(device)
+                model.backward_hh_keep_prob = torch.sigmoid(model.dense_hh_backward.weight.grad.detach().sum(axis=1)).to(device)
+            
             optimizer.step()
             checkpoint_name = checkpoint_folder / Path("checkpoint_e"+str(epoch)+"_b"+str(batch_idx)+".pt")
             cpt_track_step += 1

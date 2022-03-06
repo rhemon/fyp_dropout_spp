@@ -19,9 +19,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-tp", "--train-path", help="Path to training json file")
 
 # Seed 
-torch.manual_seed(123456)
-torch.cuda.manual_seed(123456)
-np.random.seed(123456)
+torch.manual_seed(123)
+torch.cuda.manual_seed(123)
+np.random.seed(123)
 
 
 # Setting devices
@@ -39,11 +39,14 @@ if __name__ == '__main__':
         try:
             if cfg.DROPOUT == "Dropout":
                 dropout= nn.Dropout(p=cfg.DROPOUT_PROB)
-            else:
+            elif cfg.DROPOUT not in ["GradBasedDropout", "Standout"]:
                 dropout = getattr(importlib.import_module('dropouts'), cfg.DROPOUT)(cfg)
+            else:
+                dropout = None
         except AttributeError:
             dropout = None
             cfg.DROPOUT = "None"
+
         model = getattr(importlib.import_module('models'), cfg.MODEL)(cfg, dropout=dropout).to(device)
         dataprocessor = getattr(importlib.import_module('dataloaders'), cfg.DATASET_PROCESSOR)(cfg)
 

@@ -43,23 +43,21 @@ class WeightedDrop(nn.Module):
         mask = torch.bernoulli(prob).to(device) * q
         return mask * input
 
+
+
+# https://github.com/mabirck/adaptative-dropout-pytorch/blob/master/layers.py
 class Standout(nn.Module):
 
-    def __init__(self, last_layer, alpha, beta):
+    def __init__(self, last_layer, alpha=0.5, beta=1):
+        
         super(Standout, self).__init__()
-        # self.pi = last_layer.weight
-
+        self.pi = last_layer.weight
         self.alpha = alpha
         self.beta = beta
         self.nonlinearity = nn.Sigmoid()
 
+
     def forward(self, previous, current, p=0.5, deterministic=False):
-        if not self.training:
-            return current
         # Function as in page 3 of paper: Variational Dropout
-        # self.p = self.nonlinearity(self.alpha * previous.matmul(self.pi.t()) + self.beta)
-        self.p = self.nonlinearity(self.alpha * current + self.beta)
-        self.mask = torch.bernoulli(1-self.p)
-        q = 1/(1-self.p)
-        # Deterministic version as in the paper
-        return q * self.mask * current
+        self.p = self.nonlinearity(self.alpha * previous.matmul(self.pi.t()) + self.beta)
+        return (1/self.p) * current
