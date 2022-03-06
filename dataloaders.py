@@ -1,3 +1,4 @@
+from operator import index
 import numpy as np
 import pandas as pd
 import datetime
@@ -35,6 +36,8 @@ class OneHotKeatsDatasetProcessor:
         component = self.logs['Component']
         event_name = self.logs['Event name']
         
+        self.load_method = cfg.LOAD_METHOD
+
         columns_type = cfg.COLUMNS_TYPE
 
         if columns_type == "OHV_ALL":
@@ -132,6 +135,26 @@ class OneHotKeatsDatasetProcessor:
 
 
     def load_dataset(self, test_split_ratio=0.2):
+        
+        if self.load_method == "ORIGINAL":
+            x_train, x_test, l_train, l_test, y_train, y_test = self.prep_dataset_original()
+        elif self.load_method == "OVERSAMPLE_NON_MAX":
+            x_train, x_test, l_train, l_test, y_train, y_test = self.prep_dataset_w_oversample_non_max()
+        else:
+            raise Exception(f"Support method for {self.load_method} not added yet!")
+
+        x_train, l_train, y_train = shuffle(x_train, l_train, y_train, random_state=0)
+        x_test, l_test, y_test = shuffle(x_test, l_test, y_test, random_state=0)
+
+        train_dataset = torch.utils.data.TensorDataset(x_train[:,:,0], x_train[:,:,1], l_train, y_train)
+        
+
+        test_dataset = torch.utils.data.TensorDataset(x_test[:,:,0], x_test[:,:,1], l_test, y_test)
+        # test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1)
+
+        return train_dataset, test_dataset   
+
+    def prep_dataset_original(self, test_split_ratio=0.2):
         """
         Returns a dataset loader that also separates the indexes as two separate input
         so can be treated separately by the model.
@@ -151,6 +174,7 @@ class OneHotKeatsDatasetProcessor:
             for each_dataset in datasets:
                 class_samples = each_dataset[datasets[-1] == each_class]
                 class_sets.append(class_samples)
+                
             split_train_test_set = train_test_split(*class_sets, test_size=test_split_ratio, random_state=0)
             x_train.append(split_train_test_set[0])
             x_test.append(split_train_test_set[1])
@@ -166,13 +190,56 @@ class OneHotKeatsDatasetProcessor:
         y_train = torch.cat(y_train)
         y_test = torch.cat(y_test)
 
-        x_train, l_train, y_train = shuffle(x_train, l_train, y_train, random_state=0)
-        x_test, l_test, y_test = shuffle(x_test, l_test, y_test, random_state=0)
+        print(f"Train size: {x_train.shape[0]}\nTest Size: {x_test.shape[0]}")
 
-        train_dataset = torch.utils.data.TensorDataset(x_train[:,:,0], x_train[:,:,1], l_train, y_train)
+        return x_train, x_test, l_train, l_test, y_train, y_test
+
+    def prep_dataset_w_oversample_non_max(self, test_split_ratio=0.2):
+        datasets = self.create_onehot_dataset()
+        classes = list(datasets[-1].unique())
+
+        x_train = []
+        x_test = []
+        l_train = []
+        l_test = []
+        y_train = []
+        y_test = []
+
+        all_class_sets = []
+        max_sample_per_class = 0
+        for each_class in classes:
+            class_sets = []
+            for each_dataset in datasets:
+                class_samples = each_dataset[datasets[-1] == each_class]
+                class_sets.append(class_samples)
+            all_class_sets.append(class_sets)
+            if class_sets[0].shape[0] > max_sample_per_class:
+                max_sample_per_class = class_sets[0].shape[0]
         
+        for i in range(len(all_class_sets)):
+            num_to_duplicate = max_sample_per_class - all_class_sets[i][0].shape[0]
+            if num_to_duplicate > 0:
+                indexes_to_duplicate = np.random.choice(np.arange(all_class_sets[i][0].shape[0]), size=num_to_duplicate)
+                for j in range(len(all_class_sets[i])):
+                    all_class_sets[i][j] = torch.cat([all_class_sets[i][j], all_class_sets[i][j][indexes_to_duplicate]])
+        
+        for class_sets in all_class_sets:
+            split_train_test_set = train_test_split(*class_sets, test_size=test_split_ratio, random_state=0)
+            x_train.append(split_train_test_set[0])
+            x_test.append(split_train_test_set[1])
+            l_train.append(split_train_test_set[2])
+            l_test.append(split_train_test_set[3])
+            y_train.append(split_train_test_set[4])
+            y_test.append(split_train_test_set[5])
+            
+        x_train = torch.cat(x_train)
+        x_test = torch.cat(x_test)
+        l_train = torch.cat(l_train)
+        l_test = torch.cat(l_test)
+        y_train = torch.cat(y_train)
+        y_test = torch.cat(y_test)
 
-        test_dataset = torch.utils.data.TensorDataset(x_test[:,:,0], x_test[:,:,1], l_test, y_test)
-        # test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1)
-
-        return train_dataset, test_dataset   
+        print(f"Train size: {x_train.shape[0]}\nTest Size: {x_test.shape[0]}")
+        
+        return x_train, x_test, l_train, l_test, y_train, y_test
+        
