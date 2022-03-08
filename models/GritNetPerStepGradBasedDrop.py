@@ -17,12 +17,17 @@ class GritNetPerStepGradBasedDrop(GritNetNoDropout):
 
     def get_keep_prob(self, grad):
         if self.prob_method == "TANH":
-            return torch.tanh(torch.abs(grad).sum(dim=-1))
+            normed_grad = torch.tanh(torch.abs(grad).sum(dim=-1))
         elif self.prob_method == "NORM":
             grad = torch.abs(grad).sum(dim=-1)
-            return (grad - torch.min(grad))/torch.max(grad)
+            normed_grad = (grad - torch.min(grad))/torch.max(grad)
         else:
             raise Exception("Method for determining probability from gradient unclear")
+        
+        # preventing formation of nan
+        normed_grad = torch.clamp(normed_grad, min=0.00001, max=1)
+        
+        return normed_grad
 
     def backward_custom_updates(self):
         self.model.blstm.dropout_fcell_ih.keep_prob = self.get_keep_prob(self.model.blstm.forward_cell_ih.weight.grad.detach())
