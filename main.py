@@ -1,22 +1,18 @@
-from pathlib import Path
+
 import argparse
+from distutils.command.config import config
 import json
 from types import SimpleNamespace
 import importlib
-from tqdm import tqdm
-import datetime
 import torch
-import torch.nn as nn
-import torch.optim as optim
-import shutil
-
-from model_utils import train, predict
+from pathlib import Path
 from evaluators import get_evaluation_methods
-
+import os
 import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-tp", "--train-path", help="Path to training json file")
+parser.add_argument("-md", "--model-dir", help="Path to model file")
 
 # Seed 
 torch.manual_seed(123)
@@ -28,6 +24,20 @@ np.random.seed(123)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("Detected device", device)
 
+def evaluate(cfg, model, X_train, X_test):
+    evaluation_methods = get_evaluation_methods(cfg)
+    evaluation_result = "Train\n"
+    for each_method in evaluation_methods:
+        y_preds = model.predict(X_train)
+        evaluation_result += each_method(y_preds, y_train)
+    evaluation_result += "\n\nTest\n"
+    for each_method in evaluation_methods:
+        y_preds = model.predict(X_test)
+        evaluation_result += each_method(y_preds, y_test)
+    
+    with open(model.checkpoint_folder / Path("results.txt"), "w") as result_file:
+        result_file.writelines(evaluation_result)
+
 if __name__ == '__main__':
 
     args = parser.parse_args()
@@ -36,49 +46,27 @@ if __name__ == '__main__':
         with open(args.train_path) as cfg_file:
             cfg = json.load(cfg_file, object_hook=lambda d: SimpleNamespace(**d))
         
-        try:
-            if cfg.DROPOUT == "Dropout":
-                dropout= nn.Dropout(p=cfg.DROPOUT_PROB)
-            elif cfg.DROPOUT not in ["GradBasedDropout", "Standout"]:
-                dropout = getattr(importlib.import_module('dropouts'), cfg.DROPOUT)(cfg)
-            else:
-                dropout = None
-        except AttributeError:
-            dropout = None
-            cfg.DROPOUT = "None"
+        train_path = Path(args.train_path)
+        model = getattr(importlib.import_module(f"models.{cfg.MODEL}"), cfg.MODEL)(cfg, train_path)
+        dataprocessor = getattr(importlib.import_module(f"dataloaders.{cfg.DATASET_PROCESSOR}"), cfg.DATASET_PROCESSOR)(cfg)
 
-        model = getattr(importlib.import_module('models'), cfg.MODEL)(cfg, dropout=dropout).to(device)
-        dataprocessor = getattr(importlib.import_module('dataloaders'), cfg.DATASET_PROCESSOR)(cfg)
-
-        train_dataset, test_dataset = dataprocessor.load_dataset()
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32)
-
-        lr = cfg.LR
-        total_epoch = cfg.EPOCH
-        loss_fn = getattr(nn, cfg.LOSS)()
-        optimizer = getattr(optim, cfg.OPTIMIZER)(model.parameters(), lr=lr)
-
-
-        model_desc = Path(cfg.MODEL + "_" + cfg.DROPOUT + "_" + cfg.LOSS)
-        time_stamp =  datetime.datetime.now().strftime("%m-%d-%Y-%H-%M-%S")
-        checkpoint_folder = Path("model_cpts") / model_desc / Path(time_stamp)
-        checkpoint_folder.mkdir(parents=True, exist_ok=True)
-        shutil.copy(Path(args.train_path), checkpoint_folder)
+        X_train, y_train, X_test, y_test = dataprocessor.load_dataset()
         
-        train(cfg, total_epoch, model, loss_fn, optimizer, checkpoint_folder, device, train_loader)
-
-        train_preds, train_targets = predict(model, train_dataset, device)
-        test_preds, test_targets = predict(model, test_dataset, device)
-        evaluation_methods = get_evaluation_methods(cfg)
-        print(test_preds.shape, test_targets.shape)
-        evaluation_result = "Train\n"
-        for each_method in evaluation_methods:
-            evaluation_result += each_method(train_preds, train_targets)
-        evaluation_result += "\n\nTest\n"
-        for each_method in evaluation_methods:
-            evaluation_result += each_method(test_preds, test_targets)
+        model.fit(X_train, y_train)
         
-        with open(checkpoint_folder / Path("results.txt"), "w") as result_file:
-            result_file.writelines(evaluation_result)
+        evaluate(cfg, model, X_train, X_test)
+    elif args.model_dir:
+        model_dir = Path(args.model_dir)
+        config_file = [file for file in os.listdir(model_dir) if file.endswith("json")][0]
+        config_file = Path(model_dir / Path(config_file))
+
+        with open(config_file) as cfg_file:
+            cfg = json.load(cfg_file, object_hook=lambda d: SimpleNamespace(**d))
+        
+        model = getattr(importlib.import_module(f"models.{cfg.MODEL}"), cfg.MODEL)(cfg, model_dir)
+        dataprocessor = getattr(importlib.import_module(f"dataloaders.{cfg.DATASET_PROCESSOR}"), cfg.DATASET_PROCESSOR)(cfg)
+
+        X_train, y_train, X_test, y_test = dataprocessor.load_dataset()
+        evaluate(cfg, model, X_train, X_test)
     else:
         print("No training configuration provided")
