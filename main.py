@@ -24,16 +24,16 @@ np.random.seed(123)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("Detected device", device)
 
-def evaluate(cfg, model, X_train, X_test):
+def evaluate(cfg, model, X_train, X_test, y_train, y_test):
     evaluation_methods = get_evaluation_methods(cfg)
     evaluation_result = "Train\n"
     for each_method in evaluation_methods:
         y_preds = model.predict(X_train)
-        evaluation_result += each_method(y_preds, y_train)
+        evaluation_result += each_method(y_preds, y_train.cpu())
     evaluation_result += "\n\nTest\n"
     for each_method in evaluation_methods:
         y_preds = model.predict(X_test)
-        evaluation_result += each_method(y_preds, y_test)
+        evaluation_result += each_method(y_preds, y_test.cpu())
     
     with open(model.checkpoint_folder / Path("results.txt"), "w") as result_file:
         result_file.writelines(evaluation_result)
@@ -46,15 +46,22 @@ if __name__ == '__main__':
         with open(args.train_path) as cfg_file:
             cfg = json.load(cfg_file, object_hook=lambda d: SimpleNamespace(**d))
         
+        try:
+            folder = cfg.MODEL_DIR
+        except:
+            # defaulted to GritNet as during GritNet experiments
+            # json did not include MODEL_DIR
+            folder = "GritNet"
+
         train_path = Path(args.train_path)
-        model = getattr(importlib.import_module(f"models.{cfg.MODEL}"), cfg.MODEL)(cfg, train_path)
-        dataprocessor = getattr(importlib.import_module(f"dataloaders.{cfg.DATASET_PROCESSOR}"), cfg.DATASET_PROCESSOR)(cfg)
+        model = getattr(importlib.import_module(f"models.{folder}.{cfg.MODEL}"), cfg.MODEL)(cfg, train_path=train_path)
+        dataprocessor = getattr(importlib.import_module(f"dataloaders.{cfg.DATASET_PROCESSOR}"), cfg.DATASET_PROCESSOR)(cfg, model.checkpoint_folder)
 
         X_train, y_train, X_test, y_test = dataprocessor.load_dataset()
         
         model.fit(X_train, y_train)
         
-        evaluate(cfg, model, X_train, X_test)
+        evaluate(cfg, model, X_train, X_test, y_train, y_test)
     elif args.model_dir:
         model_dir = Path(args.model_dir)
         config_file = [file for file in os.listdir(model_dir) if file.endswith("json")][0]
@@ -67,6 +74,6 @@ if __name__ == '__main__':
         dataprocessor = getattr(importlib.import_module(f"dataloaders.{cfg.DATASET_PROCESSOR}"), cfg.DATASET_PROCESSOR)(cfg)
 
         X_train, y_train, X_test, y_test = dataprocessor.load_dataset()
-        evaluate(cfg, model, X_train, X_test)
+        evaluate(cfg, model, X_train, X_test, y_train, y_test)
     else:
         print("No training configuration provided")
