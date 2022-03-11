@@ -44,7 +44,7 @@ class DropoutAfterBLSTM(nn.Module):
         return x
 
 class RNNDropAfterBLSTM(nn.Module):
-    def __init__(self, dropout_prob, embedding_dim, hidden_dim, bidirectional, batch_first, batch_size=32):
+    def __init__(self, dropout_prob, embedding_dim, hidden_dim, bidirectional, batch_first):
         super(RNNDropAfterBLSTM, self).__init__()
 
         self.blstm = BLSTM(embedding_dim, hidden_dim, bidirectional=bidirectional, batch_first=batch_first)
@@ -72,7 +72,7 @@ class WeightedDropAfterBLSTM(nn.Module):
 
 class PerStepBLSTM(nn.Module):
 
-    def __init__(self, embedding_dim, hidden_dim, dropout_method, drop_prob=0.2, batch_size=32, keep_high_magnitude=True):
+    def __init__(self, embedding_dim, hidden_dim, dropout_method, drop_prob=0.2, keep_high_magnitude=True):
         super(PerStepBLSTM, self).__init__()
 
         self.hidden_dim = hidden_dim

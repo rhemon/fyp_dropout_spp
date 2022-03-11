@@ -1,19 +1,19 @@
 
 
 import torch
-from models.GritNetNoDropout import GritNetNoDropout
+from models.GritNet.GritNetNoDropout import GritNetNoDropout
 from models.layers.lstms import PerStepBLSTM
 from models.layers.GritNet import  GritNet
 
 class GritNetPerStepGradBasedDrop(GritNetNoDropout):
     
-    def __init__(self, cfg, train_path, event_dim=1113, embedding_dim=2048, hidden_dim=128, target_size=1, batch_size=32):
-        super().__init__(cfg, train_path, event_dim, embedding_dim, hidden_dim, target_size, batch_size)
+    def __init__(self, cfg, **kwargs):
+        super().__init__(cfg, **kwargs)
         self.prob_method = cfg.PROB_METHOD
 
-    def set_model(self, event_dim, embedding_dim, hidden_dim, target_size, batch_size):
-        blstm_layer = PerStepBLSTM(embedding_dim*2, hidden_dim, "GradBasedDrop", self.drop_prob, batch_size).to(self.device)
-        self.model = GritNet(blstm_layer, event_dim, embedding_dim, hidden_dim, target_size, batch_size).to(self.device)
+    def set_model(self, event_dim, embedding_dim, hidden_dim, target_size):
+        blstm_layer = PerStepBLSTM(embedding_dim, hidden_dim, "GradBasedDrop", self.drop_prob).to(self.device)
+        self.model = GritNet(blstm_layer, event_dim, embedding_dim, hidden_dim, target_size).to(self.device)
 
     def get_keep_prob(self, grad):
         if self.prob_method == "TANH":
