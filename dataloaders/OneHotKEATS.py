@@ -77,4 +77,9 @@ class OneHotKEATS(KEATSBase):
 
     def load_dataset(self, test_split_ratio=0.2):
         dataset_train, dataset_test = super().load_dataset(test_split_ratio)
-        return (dataset_train[0].type(torch.LongTensor), dataset_train[1]), dataset_train[2], (dataset_test[0].type(torch.LongTensor), dataset_test[1]), dataset_test[2], 
+        return ((dataset_train[0].type(torch.LongTensor).to(self.device), 
+                dataset_train[1]), 
+                dataset_train[2].to(self.device), 
+                (dataset_test[0].type(torch.LongTensor).to(self.device), 
+                dataset_test[1]), 
+                dataset_test[2].to(self.device)) 
