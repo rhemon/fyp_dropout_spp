@@ -12,7 +12,7 @@ import shutil
 
 class BaseModel:
 
-    def __init__(self, cfg, checkpoint_folder):
+    def __init__(self, cfg, checkpoint_folder, dataprocessor):
 
         self.checkpoint_folder = checkpoint_folder
 
@@ -30,6 +30,7 @@ class BaseModel:
         self.loss_fn_name = cfg.LOSS
         self.optim_name = cfg.OPTIMIZER
         self.PRINT_EVERY = cfg.PRINT_EVERY
+        self.dataprocessor = dataprocessor
         
     def set_model(self, **kwargs):
         raise Exception("Not Implemented")

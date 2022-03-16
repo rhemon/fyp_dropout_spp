@@ -76,7 +76,7 @@ if __name__ == '__main__':
         
         X_train, y_train, X_test, y_test = dataprocessor.load_dataset()
 
-        model = getattr(importlib.import_module(f"models.{folder}.{cfg.MODEL}"), cfg.MODEL)(cfg, checkpiont_dir, input_dim=X_train.shape[-1])
+        model = getattr(importlib.import_module(f"models.{folder}.{cfg.MODEL}"), cfg.MODEL)(cfg, checkpiont_dir, input_dim=X_train.shape[-1], dataprocessor=dataprocessor)
 
         
         model.fit(X_train, y_train)

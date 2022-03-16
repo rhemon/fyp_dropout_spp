@@ -7,8 +7,8 @@ from models.layers.GritNet import  GritNet
 
 class GritNetPerStepGradBasedDrop(GritNetNoDropout):
     
-    def __init__(self, cfg, train_path, input_dim, **kwargs):
-        super().__init__(cfg, train_path, input_dim, **kwargs)
+    def __init__(self, cfg, train_path, input_dim, dataprocessor, **kwargs):
+        super().__init__(cfg, train_path, input_dim, dataprocessor, **kwargs)
         self.prob_method = cfg.PROB_METHOD
 
     def set_model(self, event_dim, embedding_dim, hidden_dim, target_size):

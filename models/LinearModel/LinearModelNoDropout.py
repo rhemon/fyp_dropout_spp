@@ -11,8 +11,8 @@ from models.BaseModel import BaseModel
 
 class LinearModelNoDropout(BaseModel):
 
-    def __init__(self, cfg, train_path, input_dim, hidden_dim=2048):
-        super(LinearModelNoDropout, self).__init__(cfg, train_path)
+    def __init__(self, cfg, train_path, input_dim, dataprocessor, hidden_dim=2048):
+        super(LinearModelNoDropout, self).__init__(cfg, train_path, dataprocessor)
         
         target_size = 1
         if cfg.OUTPUT_TYPE == "GRADE":

@@ -26,23 +26,21 @@ class Sentiment140(BaseLoader):
             self.tokenizer_path = None        
 
     
-    def get_tokenizer(self, text):
+    def set_tokenizer(self, text):
 
         # load if config specified a file
         if self.tokenizer_path is not None:
             with open(self.tokenizer_path, 'rb') as handle:
-                return pickle.load(handle)
-        
-        # create a tokenizer
-        tokenizer = Tokenizer()
-        # fit the tokenizer in the train text
-        tokenizer.fit_on_texts(text)
+                self.tokenizer = pickle.load(handle)
+        else:
+            # create a tokenizer
+            self.tokenizer = Tokenizer()
+            # fit the tokenizer in the train text
+            self.tokenizer.fit_on_texts(text)
 
-        # saving tokenizer
-        with open("raw_data_sets/Sentiment140/" + self.checkpoint_folder.stem + ".pickle", 'wb') as handle:
-            pickle.dump(tokenizer, handle, protocol = pickle.HIGHEST_PROTOCOL)
-        
-        return tokenizer
+            # saving tokenizer
+            with open("raw_data_sets/Sentiment140/" + self.checkpoint_folder.stem + ".pickle", 'wb') as handle:
+                pickle.dump(self.tokenizer, handle, protocol = pickle.HIGHEST_PROTOCOL)
     
     def create_dataset(self):
         
@@ -58,13 +56,13 @@ class Sentiment140(BaseLoader):
         y = y.reshape(-1, 1)
 
         print("Tokenizing text...")
-        tokenizer = self.get_tokenizer(self.data['text'])
+        self.set_tokenizer(self.data['text'])
 
         # get max length of the train data
         max_length = max([len(s.split()) for s in self.data['text']])
 
         # pad sequences in x_train data set to the max length
-        x = pad_sequences(tokenizer.texts_to_sequences(self.data['text']),
+        x = pad_sequences(self.tokenizer.texts_to_sequences(self.data['text']),
                                 maxlen = max_length)
         print("...Tokenized")
 

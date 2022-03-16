@@ -11,8 +11,8 @@ from models.BaseModel import BaseModel
 
 class GritNetNoDropout(BaseModel):
 
-    def __init__(self, cfg, train_path, input_dim, event_dim=1113, embedding_dim=2048, hidden_dim=128, **kwargs):
-        super(GritNetNoDropout, self).__init__(cfg, train_path)
+    def __init__(self, cfg, train_path, input_dim, dataprocessor, event_dim=1113, embedding_dim=2048, hidden_dim=128, **kwargs):
+        super(GritNetNoDropout, self).__init__(cfg, train_path, dataprocessor)
 
         target_size = 1
         if cfg.OUTPUT_TYPE == "GRADE":

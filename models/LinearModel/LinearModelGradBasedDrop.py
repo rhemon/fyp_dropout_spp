@@ -7,8 +7,8 @@ from models.layers.LinearModel import  LinearModel
 
 class LinearModelGradBasedDrop(LinearModelNoDropout):
     
-    def __init__(self, cfg, train_path, input_dim,**kwargs):
-        super(LinearModelGradBasedDrop, self).__init__(cfg, train_path, input_dim, **kwargs)
+    def __init__(self, cfg, train_path, input_dim, dataprocessor, **kwargs):
+        super(LinearModelGradBasedDrop, self).__init__(cfg, train_path, input_dim, dataprocessor, **kwargs)
         self.prob_method = cfg.PROB_METHOD
     
     def set_model(self, input_dim, hidden_dim, target_size):
