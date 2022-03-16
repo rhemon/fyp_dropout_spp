@@ -36,7 +36,9 @@ class BoWKEATS(KEATSBase):
         bows = torch.stack(bows, axis=0)
         targets = torch.cat(targets, axis=0)
         
-        return bows, targets
+        if targets.max()>1:
+            targets = targets.type(torch.LongTensor)
+        return bows.to(self.device), targets.to(self.device)
     
     def load_dataset(self, test_split_ratio=0.2):
         dataset_train, dataset_test = super().load_dataset(test_split_ratio)

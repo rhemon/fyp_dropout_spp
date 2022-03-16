@@ -4,18 +4,17 @@ from imblearn.metrics import geometric_mean_score as gmean_score
 
 def confusion_matrix_dict(y_predicted, y_target):
     cm = confusion_matrix(y_target, y_predicted)
-    tn, fp, fn, tp = cm[0, 0], cm[0,1], cm[1,0], cm[1,1]
-    return f"TN = {tn}\nTP = {tp}\nFN = {fn}\nFP = {fp}\n"
+    return f"Confusion matrix = {cm}\n"
     
 
 def get_f1_score(y_predicted, y_target):
-    return f"F1 Score = {f1_score(y_target, y_predicted)}\n"
+    return f"F1 Score = {f1_score(y_target, y_predicted, average='macro')}\n"
     
 def get_precision(y_predicted, y_target):
-    return f"Precision = {precision_score(y_target, y_predicted)}\n"
+    return f"Precision = {precision_score(y_target, y_predicted, average='macro')}\n"
 
 def get_recall(y_predicted, y_target): ### TODO: UAR consideration
-    return f"Recall = {recall_score(y_target, y_predicted)}\n"
+    return f"Recall = {recall_score(y_target, y_predicted, average='macro')}\n"
 
 def get_roc_auc(y_predicted, y_target):
     return f"ROC AUC = {roc_auc_score(y_target, y_predicted)}\n"

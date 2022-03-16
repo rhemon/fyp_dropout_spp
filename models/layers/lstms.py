@@ -1,5 +1,5 @@
 
-from models.layers.dropouts import StandardDropout, RNNDrop, Standout, WeightedDrop, GradBasedDropout
+from models.layers.dropouts import StandardDropout, RNNDrop, Standout, GradBasedDropout
 import torch
 import torch.nn as nn
 
@@ -15,18 +15,13 @@ class BLSTM(nn.Module):
 
         self.blstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=bidirectional, batch_first=batch_first)
 
-    def forward(self, inputs):
-        x, lens = inputs
-
-        packed_x = torch.nn.utils.rnn.pack_padded_sequence(x, lens, batch_first=True, enforce_sorted=False)
+    def forward(self, x):
         
         h0 = torch.zeros(2, x.size(0), self.hidden_dim).to(device)
         c0 = torch.zeros(2, x.size(0), self.hidden_dim).to(device)
         
-        blstm_output, _ = self.blstm(packed_x, (h0, c0))
+        x, _ = self.blstm(x, (h0, c0))
         
-        x, _ = torch.nn.utils.rnn.pad_packed_sequence(blstm_output, batch_first=True)
-
         return x
 
 class DropoutAfterBLSTM(nn.Module):
@@ -57,18 +52,6 @@ class RNNDropAfterBLSTM(nn.Module):
             x = self.dropout(x)
         return x
 
-class WeightedDropAfterBLSTM(nn.Module):
-    def __init__(self, embedding_dim, hidden_dim, bidirectional, batch_first, keep_high_magnitude):
-        super(WeightedDropAfterBLSTM, self).__init__()
-
-        self.blstm = BLSTM(embedding_dim, hidden_dim, bidirectional=bidirectional, batch_first=batch_first)
-        self.dropout = WeightedDrop(keep_high_magnitude)
-    
-    def forward(self, inputs):
-        x = self.blstm(inputs)
-        if self.training:
-            x = self.dropout(x)
-        return x
 
 class PerStepBLSTM(nn.Module):
 
@@ -102,7 +85,6 @@ class PerStepBLSTM(nn.Module):
     def setup_dropout_layer(self, dropout_method, drop_prob, keep_high_magnitude):
         self.rnn_drop = False
         self.recurrent_drop = False
-        self.magnitude_drop = False
         self.h0_drop = False
         self.standout_drop = False
         self.grad_drop = False
@@ -128,18 +110,14 @@ class PerStepBLSTM(nn.Module):
             self.dropout_bcell_ih = GradBasedDropout(self.hidden_dim)
             self.dropout_bcell_hh = GradBasedDropout(self.hidden_dim)
             self.grad_drop = True
-        elif dropout_method == "WeightedDrop":
-            self.dropout = WeightedDrop(keep_high_magnitude)
-            self.magnitude_drop = True
 
     def forward(self, x):
-        x, _ = x
         lstm_inputs = x.unbind(1)
         reverse_lstm_inputs = lstm_inputs[::-1]
         
         forward_lstm_outputs = []
         backward_lstm_outputs = []
-
+        
         forward_h0, forward_c0 = (torch.zeros(x.size(0), self.hidden_dim).to(device), torch.zeros(x.size(0), self.hidden_dim).to(device))
         backward_h0, backward_c0 = (torch.zeros(x.size(0), self.hidden_dim).to(device), torch.zeros(x.size(0), self.hidden_dim).to(device))
 
@@ -176,10 +154,6 @@ class PerStepBLSTM(nn.Module):
             
             forward_cellgate = forward_cell_ih + forward_cell_hh
             backward_cellgate = backward_cell_ih + backward_cell_hh
-
-            if self.training and self.magnitude_drop:
-                forward_cellgate = self.dropout(forward_cellgate)
-                backward_cellgate = self.dropout(backward_cellgate)
 
             forward_ingate = torch.sigmoid(forward_ingate)
             forward_forgetgate = torch.sigmoid(forward_forgetgate)

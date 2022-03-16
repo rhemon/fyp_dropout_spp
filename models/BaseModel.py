@@ -1,5 +1,6 @@
 
 import datetime
+from tabnanny import check
 
 import torch
 import torch.nn as nn
@@ -11,17 +12,9 @@ import shutil
 
 class BaseModel:
 
-    def __init__(self, cfg, train_path):
-        
-        model_desc = Path(cfg.MODEL)
-        # if path passed is model_cpts then its on model evaluation mode, dont recreate files
-        if "model_cpts" in str(train_path):
-            self.checkpoint_folder = train_path
-        else:
-            time_stamp =  datetime.datetime.now().strftime("%m-%d-%Y-%H-%M-%S")
-            self.checkpoint_folder = Path("model_cpts") / model_desc / Path(time_stamp)
-            self.checkpoint_folder.mkdir(parents=True, exist_ok=True)
-            shutil.copy(train_path, self.checkpoint_folder)
+    def __init__(self, cfg, checkpoint_folder):
+
+        self.checkpoint_folder = checkpoint_folder
 
         self.batch_size = cfg.BATCH_SIZE
         

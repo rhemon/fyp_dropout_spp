@@ -93,9 +93,6 @@ class BaseLoader:
             if class_sets[0].shape[0] > max_sample_per_class:
                 max_sample_per_class = class_sets[0].shape[0]
 
-        if self.load_method == "OVERSAMPLE_NON_MAX":
-            all_class_sets = self.oversample(all_class_sets[:], max_sample_per_class)
-        
         train_sets, test_sets = self.split_class_sets(all_class_sets, test_split_ratio)
         
         if self.load_method == "OVERSAMPLE_NON_MAX_TRAIN":

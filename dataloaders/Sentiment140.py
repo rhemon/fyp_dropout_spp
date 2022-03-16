@@ -76,4 +76,5 @@ class Sentiment140(BaseLoader):
             
     def load_dataset(self, test_split_ratio=0.2):
         train, test = super().load_dataset(test_split_ratio)
+
         return train[0], train[1], test[0], test[1]

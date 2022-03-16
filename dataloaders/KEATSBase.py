@@ -31,6 +31,7 @@ class KEATSBase(BaseLoader):
 
         self.logs = pd.read_csv('raw_data_sets/KEATS Dataset/KEATS_logs.csv')
         self.marks = pd.read_csv('raw_data_sets/KEATS Dataset/finalMarksv8.csv')
+        self.set_grades(self.marks['Final'])
         self.output_type = cfg.OUTPUT_TYPE
 
         self.logs['Time'] = pd.to_datetime(self.logs['Time'], dayfirst=True)
@@ -67,12 +68,24 @@ class KEATSBase(BaseLoader):
         if event not in self.unique_events:
             raise Exception("Event", event, "passed doesn't seem to exist in the UNIQUE EVENT array")
         return self.unique_events.index(event)    
+    
+    def set_grades(self, marks):
+        self.grades = torch.zeros(marks.shape)
+        
+        self.grades[marks >= 40] = 1
+        self.grades[marks >= 50] = 2
+        self.grades[marks >= 60] = 3
+        self.grades[marks >= 70] = 4
+
+        return self.grades
 
     def get_final_mark(self, sid):
         if self.output_type == "BINARY":
             target = torch.zeros((1,))
             target[0] = int((self.marks[self.marks['Id'] == sid ].get('Final') >= 40).item())
-        else:
+        elif self.output_type == "GRADE":
+            return self.grades[self.marks['Id'] == sid]
+        else: 
             raise Exception(f"Unsupported output type: {self.output_type}")
         return target
 

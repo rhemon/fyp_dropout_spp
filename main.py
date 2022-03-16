@@ -2,6 +2,7 @@
 import argparse
 from distutils.command.config import config
 import json
+from tabnanny import check
 from types import SimpleNamespace
 import importlib
 import torch
@@ -9,6 +10,8 @@ from pathlib import Path
 from evaluators import get_evaluation_methods
 import os
 import numpy as np
+import datetime
+import shutil
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-tp", "--train-path", help="Path to training json file")
@@ -38,6 +41,19 @@ def evaluate(cfg, model, X_train, X_test, y_train, y_test):
     with open(model.checkpoint_folder / Path("results.txt"), "w") as result_file:
         result_file.writelines(evaluation_result)
 
+def get_checkpoint_folder(cfg):
+    model_desc = Path(cfg.MODEL)
+    # if path passed is model_cpts then its on model evaluation mode, dont recreate files
+    if "model_cpts" in str(train_path):
+        checkpoint_folder = train_path
+    else:
+        time_stamp =  datetime.datetime.now().strftime("%m-%d-%Y-%H-%M-%S")
+        checkpoint_folder = Path("model_cpts") / Path(cfg.DATASET_PROCESSOR) / Path(cfg.OUTPUT_TYPE) / model_desc / Path(time_stamp)
+        checkpoint_folder.mkdir(parents=True, exist_ok=True)
+        shutil.copy(train_path, checkpoint_folder)
+    
+    return checkpoint_folder
+
 if __name__ == '__main__':
 
     args = parser.parse_args()
@@ -54,10 +70,14 @@ if __name__ == '__main__':
             folder = "GritNet"
 
         train_path = Path(args.train_path)
-        model = getattr(importlib.import_module(f"models.{folder}.{cfg.MODEL}"), cfg.MODEL)(cfg, train_path=train_path)
-        dataprocessor = getattr(importlib.import_module(f"dataloaders.{cfg.DATASET_PROCESSOR}"), cfg.DATASET_PROCESSOR)(cfg, model.checkpoint_folder)
-
+        checkpiont_dir = get_checkpoint_folder(cfg)
+        
+        dataprocessor = getattr(importlib.import_module(f"dataloaders.{cfg.DATASET_PROCESSOR}"), cfg.DATASET_PROCESSOR)(cfg, checkpiont_dir)
+        
         X_train, y_train, X_test, y_test = dataprocessor.load_dataset()
+
+        model = getattr(importlib.import_module(f"models.{folder}.{cfg.MODEL}"), cfg.MODEL)(cfg, checkpiont_dir, input_dim=X_train.shape[-1])
+
         
         model.fit(X_train, y_train)
         

@@ -6,7 +6,7 @@ from models.BaseModel import BaseModel
 
 class SimpleSentimentNoDropout(BaseModel):
 
-    def __init__(self, cfg, train_path, vocab_size=290713, embedding_dim=64, hidden_dim=128, target_size=1, seq_len=50):
+    def __init__(self, cfg, train_path, input_dim, vocab_size=290713, embedding_dim=64, hidden_dim=128, target_size=1, seq_len=50, **kwargs):
         super(SimpleSentimentNoDropout, self).__init__(cfg, train_path)
         
         self.set_model(vocab_size, embedding_dim, hidden_dim, target_size, seq_len)

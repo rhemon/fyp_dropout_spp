@@ -34,22 +34,6 @@ class RNNDrop(nn.Module):
             self.mask = torch.unsqueeze(self.mask, dim=1)
         return input * self.mask
 
-class WeightedDrop(nn.Module):
-    def __init__(self, keep_high_magnitude=True):
-        super(WeightedDrop, self).__init__()
-
-        self.keep_high_magnitude = keep_high_magnitude
-
-    def forward(self, input):
-        ones = torch.ones(input.shape).to(device) 
-        prob = ones *  torch.softmax(torch.abs(input), dim=-1)
-        # take 1-p if keep low magnitude neurons
-        if not self.keep_high_magnitude:
-            prob = 1-prob    
-        q = 1/(prob)
-        mask = torch.bernoulli(prob).to(device) * q
-        return mask * input
-
 # https://github.com/mabirck/adaptative-dropout-pytorch/blob/master/layers.py
 class Standout(nn.Module):
     def __init__(self, last_layer, alpha=0.5, beta=1):  
@@ -72,7 +56,15 @@ class GradBasedDropout(nn.Module):
         super(GradBasedDropout, self).__init__()
         self.keep_prob = torch.ones(input_dim).to(device)
     
+    def update_keep_prob(self, grad, method):
+        if method == "TANH":
+            self.keep_prob = torch.tanh(torch.abs(grad).sum(dim=-1))
+        elif method == "NORM":
+            grad = torch.abs(grad).sum(dim=-1)
+            self.keep_prob = (grad - torch.min(grad))/(torch.max(grad)+1e-7)
+    
     def forward(self, x):
         keep_prob = torch.ones(x.shape).to(device) * torch.unsqueeze(self.keep_prob, dim=0) # for all batches same probability
+        keep_prob = torch.clip(keep_prob, min=0.00001, max=1)
         mask = torch.bernoulli(keep_prob) * 1/keep_prob
         return mask * x

@@ -13,21 +13,24 @@ class GritNet(nn.Module):
         self.target_size = target_size
         
         self.embeddings = nn.Embedding(event_dim, embedding_dim)
-        
+
         self.blstm = blstm_layer
 
         self.dense = nn.Linear(hidden_dim*2, target_size)
-        self.sigmoid = nn.Sigmoid()
+        if target_size > 1:
+            self.out = nn.LogSoftmax(dim=-1)
+        else:
+            self.out = nn.Sigmoid()
         
     def forward(self, X):
-        event_x, event_time_x, lens = X
+        event_x, event_time_x = X
         event_embedding = self.embeddings(event_x)
         time_embedding = self.embeddings(event_time_x)
         
         x = torch.cat([event_embedding, time_embedding], axis=-1)
         
-        x = self.blstm((x, lens))
+        x = self.blstm(x)
 
         gmp_output = torch.max(x, 1, keepdim=False)[0] # batch_size, 256 ? 
 
-        return self.sigmoid(self.dense(gmp_output))
+        return self.out(self.dense(gmp_output))

@@ -72,14 +72,16 @@ class OneHotKEATS(KEATSBase):
             lengths[i] = ii.size(0)
 
         targets = torch.cat(targets, axis=0)
-        
+        if targets.max()>1:
+            targets = targets.type(torch.LongTensor)
         return inputs, lengths, targets
 
     def load_dataset(self, test_split_ratio=0.2):
         dataset_train, dataset_test = super().load_dataset(test_split_ratio)
-        return ((dataset_train[0].type(torch.LongTensor).to(self.device), 
-                dataset_train[1]), 
-                dataset_train[2].to(self.device), 
-                (dataset_test[0].type(torch.LongTensor).to(self.device), 
-                dataset_test[1]), 
-                dataset_test[2].to(self.device)) 
+        # return ((dataset_train[0].type(torch.LongTensor).to(self.device), 
+        #         dataset_train[1]), 
+        #         dataset_train[2].to(self.device), 
+        #         (dataset_test[0].type(torch.LongTensor).to(self.device), 
+        #         dataset_test[1]), 
+        #         dataset_test[2].to(self.device)) 
+        return dataset_train[0].type(torch.LongTensor).to(self.device), dataset_train[2].to(self.device), dataset_test[0].type(torch.LongTensor).to(self.device), dataset_test[2].to(self.device)
