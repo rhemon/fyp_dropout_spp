@@ -45,7 +45,7 @@ class Standout(nn.Module):
 
     def forward(self, previous, current):
         self.p = self.nonlinearity(self.alpha * previous.matmul(self.pi.t()) + self.beta)
-
+        self.p = torch.clip(self.p, min=0.00001, max=1)
         mask = Variable(torch.Tensor(self.p.size()).uniform_(0,1)).to(device) < self.p
         mask = mask.type(torch.FloatTensor).to(device)
 
