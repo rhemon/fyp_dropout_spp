@@ -28,7 +28,7 @@ class DropoutAfterBLSTM(nn.Module):
     def __init__(self, dropout_prob, embedding_dim, hidden_dim, bidirectional, batch_first):
         super(DropoutAfterBLSTM, self).__init__()
 
-        self.blstm = BLSTM(embedding_dim, hidden_dim, bidirectional=bidirectional, batch_first=batch_first)
+        self.blstm = PerStepBLSTM(embedding_dim, hidden_dim, None)
         self.dropout = StandardDropout(dropout_prob)
     
     def forward(self, inputs):
@@ -37,21 +37,6 @@ class DropoutAfterBLSTM(nn.Module):
         if self.training:
             x = self.dropout(x)
         return x
-
-class RNNDropAfterBLSTM(nn.Module):
-    def __init__(self, dropout_prob, embedding_dim, hidden_dim, bidirectional, batch_first):
-        super(RNNDropAfterBLSTM, self).__init__()
-
-        self.blstm = BLSTM(embedding_dim, hidden_dim, bidirectional=bidirectional, batch_first=batch_first)
-        self.dropout = RNNDrop(dropout_prob)
-    
-    def forward(self, inputs):
-
-        x = self.blstm(inputs)
-        if self.training:
-            x = self.dropout(x)
-        return x
-
 
 class PerStepBLSTM(nn.Module):
 
@@ -105,18 +90,18 @@ class PerStepBLSTM(nn.Module):
             self.dropout_bcell_hh = Standout(self.backward_cell_hh)
             self.standout_drop = True
         elif dropout_method == "GradBasedDrop":
-            self.dropout_fcell_ih = GradBasedDropout(self.hidden_dim)
-            self.dropout_fcell_hh = GradBasedDropout(self.hidden_dim)
-            self.dropout_bcell_ih = GradBasedDropout(self.hidden_dim)
-            self.dropout_bcell_hh = GradBasedDropout(self.hidden_dim)
+            self.dropout_fcell_ih = GradBasedDropout(self.hidden_dim, drop_prob)
+            self.dropout_fcell_hh = GradBasedDropout(self.hidden_dim, drop_prob)
+            self.dropout_bcell_ih = GradBasedDropout(self.hidden_dim, drop_prob)
+            self.dropout_bcell_hh = GradBasedDropout(self.hidden_dim, drop_prob)
             self.grad_drop = True
 
     def forward(self, x):
-        lstm_inputs = x.unbind(1)
-        reverse_lstm_inputs = lstm_inputs[::-1]
+        # lstm_inputs = x.unbind(1)
+        # reverse_lstm_inputs = lstm_inputs[::-1]
         
-        forward_lstm_outputs = []
-        backward_lstm_outputs = []
+        outputs = torch.zeros(x.shape[0], x.shape[1], self.hidden_dim*2).to(device)
+        
         
         forward_h0, forward_c0 = (torch.zeros(x.size(0), self.hidden_dim).to(device), torch.zeros(x.size(0), self.hidden_dim).to(device))
         backward_h0, backward_c0 = (torch.zeros(x.size(0), self.hidden_dim).to(device), torch.zeros(x.size(0), self.hidden_dim).to(device))
@@ -124,8 +109,8 @@ class PerStepBLSTM(nn.Module):
         if self.training and self.rnn_drop:
             self.dropout.reset_mask((x.size(0), self.hidden_dim))
 
-        for i in range(len(lstm_inputs)):
-            forward_step_input = lstm_inputs[i]
+        for i in range(x.shape[1]):
+            forward_step_input = x[:,i,:]
 
             forward_ingate = self.forward_in_ih(forward_step_input) + self.forward_in_hh(forward_h0)
             forward_forgetgate = self.forward_forget_ih(forward_step_input) + self.forward_forget_hh(forward_h0)
@@ -133,7 +118,7 @@ class PerStepBLSTM(nn.Module):
             forward_cell_ih = self.forward_cell_ih(forward_step_input)
             forward_cell_hh = self.forward_cell_hh(forward_h0)
 
-            backward_step_input = reverse_lstm_inputs[i]
+            backward_step_input = x[:, x.shape[1]-(i+1), :]
             backward_ingate = self.backward_in_ih(backward_step_input) + self.backward_in_hh(backward_h0)
             backward_forgetgate = self.backward_forget_ih(backward_step_input) + self.backward_forget_hh(backward_h0)
             backward_outgate = self.backward_out_ih(backward_step_input) + self.backward_out_hh(backward_h0)
@@ -185,12 +170,14 @@ class PerStepBLSTM(nn.Module):
                 forward_h0 = self.dropout(forward_h0)
                 backward_c0 = self.dropout(backward_h0)
 
-            forward_lstm_outputs.append(forward_h0)
-            backward_lstm_outputs.append(backward_h0)
+            outputs[:, i, :self.hidden_dim] = forward_h0
+            outputs[:, x.shape[1]-(i+1), self.hidden_dim:] = backward_h0
+            # forward_lstm_outputs.append(forward_h0)
+            # backward_lstm_outputs.append(backward_h0)
         
-        forward_lstm_outputs = torch.stack(forward_lstm_outputs, dim=1)
-        backward_lstm_outputs = torch.stack(backward_lstm_outputs, dim=1)
+        # forward_lstm_outputs = torch.stack(forward_lstm_outputs, dim=1)
+        # backward_lstm_outputs = torch.stack(backward_lstm_outputs, dim=1)
 
-        x = torch.cat([forward_lstm_outputs, backward_lstm_outputs], dim=-1)
+        # x = torch.cat([forward_lstm_outputs, backward_lstm_outputs], dim=-1)
 
-        return x
+        return outputs

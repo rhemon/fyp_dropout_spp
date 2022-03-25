@@ -35,7 +35,10 @@ class BaseModel:
     def set_model(self, **kwargs):
         raise Exception("Not Implemented")
 
-    def backward_custom_updates(self):
+    def update_per_iter(self):
+        pass
+    
+    def update_per_epoch(self):
         pass
 
     def train(self, train_loader):
@@ -61,14 +64,16 @@ class BaseModel:
                 self.optimizer.zero_grad()
                 loss.backward()
 
-                self.backward_custom_updates()
+                self.update_per_iter()
                 
                 self.optimizer.step()
                 print_track_step += 1
                 if print_track_step % self.PRINT_EVERY == 0:
                     print(f'epoch: {epoch + 1} step: {batch_idx + 1}/{len(train_loader)} loss: {loss}')
                     print_track_step = 0
-
+            
+            self.update_per_epoch()
+            
             print(f'epoch: {epoch + 1} loss: {sum(batch_losses)/len(batch_losses)}')
             print_track_step = 0
             checkpoint_name = self.checkpoint_folder / Path("checkpoint_e"+str(epoch)+".pt")

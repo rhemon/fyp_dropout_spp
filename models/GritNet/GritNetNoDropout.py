@@ -5,7 +5,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from models.layers.lstms import BLSTM 
+from models.layers.lstms import PerStepBLSTM 
 from models.layers.GritNet import GritNet
 from models.BaseModel import BaseModel
 
@@ -21,7 +21,7 @@ class GritNetNoDropout(BaseModel):
         self.set_model(event_dim, embedding_dim, hidden_dim, target_size)
 
     def set_model(self, event_dim, embedding_dim, hidden_dim, target_size):
-        blstm_layer = BLSTM(embedding_dim*2, hidden_dim, bidirectional=True, batch_first=True).to(self.device)
+        blstm_layer = PerStepBLSTM(embedding_dim*2, hidden_dim, None).to(self.device)
         self.model = GritNet(blstm_layer, event_dim, embedding_dim, hidden_dim, target_size).to(self.device)
 
     def predict(self, X, threshold=0.5):

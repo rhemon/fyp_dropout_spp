@@ -5,7 +5,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from models.layers.lstms import BLSTM 
+from models.layers.linears import LinearWithNoDropout 
 from models.layers.LinearModel import LinearModel
 from models.BaseModel import BaseModel
 
@@ -22,7 +22,7 @@ class LinearModelNoDropout(BaseModel):
         self.set_model(input_dim, hidden_dim, target_size)
 
     def set_model(self, input_dim, hidden_dim, target_size):
-        layer = nn.Linear(input_dim, hidden_dim).to(self.device)
+        layer = LinearWithNoDropout(input_dim, hidden_dim).to(self.device)
         self.model = LinearModel(layer, hidden_dim, target_size).to(self.device)
 
     def predict(self, X, threshold=0.5):

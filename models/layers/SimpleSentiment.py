@@ -3,7 +3,7 @@ import torch.nn as nn
 
 class SimpleSentiment(nn.Module):
 
-    def __init__(self, blstm_layer, vocab_size=290713, embedding_dim=64, hidden_dim=128, target_size=1, seq_len=50):
+    def __init__(self, blstm_layer, vocab_size=290713, embedding_dim=200, hidden_dim=128, target_size=1, seq_len=50):
         
         super(SimpleSentiment, self).__init__()
         
@@ -20,7 +20,7 @@ class SimpleSentiment(nn.Module):
         text = text[0]
         x = self.embeddings(text)
         
-        x = self.blstm((x, torch.ones(x.size(0))*self.seq_len))
+        x = self.blstm(x)
         
         x = self.flatten(x)        
         return self.sigmoid(self.dense(x))

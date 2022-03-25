@@ -5,6 +5,17 @@ import torch.nn as nn
 from models.layers.dropouts import StandardDropout, Standout, GradBasedDropout
 
 
+class LinearWithNoDropout(nn.Module):
+
+    def __init__(self, input_dim, hidden_dim):
+        super(LinearWithNoDropout, self).__init__()
+
+        self.fc = nn.Linear(input_dim, hidden_dim)
+        self.activation = nn.ReLU()
+
+    def forward(self, x):
+        return self.activation(self.fc(x))
+
 class LinearWithDropout(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, dropout_prob):
@@ -19,12 +30,12 @@ class LinearWithDropout(nn.Module):
 
 class LinearWithStandout(nn.Module):
 
-    def __init__(self, input_dim, hidden_dim, dropout_prob):
+    def __init__(self, input_dim, hidden_dim):
         super(LinearWithStandout, self).__init__()
 
         self.fc = nn.Linear(input_dim, hidden_dim)
         self.drop = Standout(self.fc)
-        (dropout_prob)
+        
         self.activation = nn.ReLU()
 
     def forward(self, x):
@@ -36,7 +47,7 @@ class LinearWithGradBasedDropout(nn.Module):
         super(LinearWithGradBasedDropout, self).__init__()
 
         self.fc = nn.Linear(input_dim, hidden_dim)
-        self.drop = GradBasedDropout(hidden_dim)
+        self.drop = GradBasedDropout(hidden_dim, dropout_prob)
         self.activation = nn.ReLU()
 
     def forward(self, x):

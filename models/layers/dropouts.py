@@ -52,17 +52,35 @@ class Standout(nn.Module):
         return (1/self.p) * mask * current
 
 class GradBasedDropout(nn.Module):
-    def __init__(self, input_dim):
+    def __init__(self, input_dim, drop_prob):
         super(GradBasedDropout, self).__init__()
         self.keep_prob = torch.ones(input_dim).to(device)
+        self.drop_prob = drop_prob
     
     def update_keep_prob(self, grad, method):
+        ## The idea is to keep neurons with higher gradients stay
+        ## and drop neurons with low gradients
+        
         if method == "TANH":
             self.keep_prob = torch.tanh(torch.abs(grad).sum(dim=-1))
-        elif method == "NORM":
+            if self.drop_prob is not None:
+                # scale to 1-DROP_PROB to 1 if specified, else left as 0 to 1  range
+                self.keep_prob = (self.keep_prob * self.drop_prob) + (1-self.drop_prob)
+        elif method == "ABS_NORM":
             grad = torch.abs(grad).sum(dim=-1)
-            self.keep_prob = (grad - torch.min(grad))/(torch.max(grad)+1e-7)
-    
+            self.keep_prob = (grad - torch.min(grad))/(torch.max(grad) - torch.min(grad) + 1e-7)
+            if self.drop_prob is not None:
+                # scale to 1-DROP_PROB to 1 if specified, else left as 0 to 1  range
+                self.keep_prob = (self.keep_prob * self.drop_prob) + (1-self.drop_prob)
+        elif method == "NORM":
+            grad = grad.sum(dim=-1)
+            self.keep_prob = (grad - torch.min(grad))/(torch.max(grad) - torch.min(grad) + 1e-7)
+            if self.drop_prob is not None:
+                # scale to 1-DROP_PROB to 1 if specified, else left as 0 to 1  range
+                self.keep_prob = (self.keep_prob * self.drop_prob) + (1-self.drop_prob)
+        
+        
+
     def forward(self, x):
         keep_prob = torch.ones(x.shape).to(device) * torch.unsqueeze(self.keep_prob, dim=0) # for all batches same probability
         keep_prob = torch.clip(keep_prob, min=0.00001, max=1)

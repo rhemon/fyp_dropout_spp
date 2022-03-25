@@ -24,10 +24,7 @@ class KEATSBase(BaseLoader):
         super(KEATSBase, self).__init__(cfg)
         self.START_TIME = datetime.datetime(2021, 4, 1, 0, 0)
         self.TIME_OHV_LENGTH = 788
-        try:
-            self.HOUR_PER_INDEX = cfg.HOUR_PER_INDEX
-        except AttributeError:
-            self.HOUR_PER_INDEX = 6
+        self.HOUR_PER_INDEX = 6
 
         self.logs = pd.read_csv('raw_data_sets/KEATS Dataset/KEATS_logs.csv')
         self.marks = pd.read_csv('raw_data_sets/KEATS Dataset/finalMarksv8.csv')
