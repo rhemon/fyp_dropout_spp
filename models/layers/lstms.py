@@ -79,7 +79,7 @@ class PerStepBLSTM(nn.Module):
             self.h0_drop = True
         elif dropout_method == "RNNDrop":
             self.dropout = RNNDrop(drop_prob, True)
-            self.cellstate_drop = True
+            self.rnn_drop = True
         elif dropout_method == "RecurrentDropout":
             self.dropout = StandardDropout(drop_prob)
             self.recurrent_drop = True
