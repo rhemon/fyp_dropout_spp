@@ -1,20 +1,25 @@
-from tabnanny import check
-import torch
-import pandas as pd
-import re
-import pickle
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
-from nltk.corpus import stopwords
-from pathlib import Path
+from keras.preprocessing.text import Tokenizer
+import pandas as pd
+import pickle
+from sklearn.preprocessing import LabelEncoder
+import torch
 
 from dataloaders.BaseLoader import BaseLoader 
 
+
 class Sentiment140(BaseLoader):
+    """
+    Sentiment140 dataset loader. Extended from BaseLoader.
+    """
 
     def __init__(self, cfg, checkpoint_folder):
+        """
+        Sentiment140 Constructor. Sets up base attributes and tokenizer path.
+
+        @param cfg               : SimpleNamespace object created from json object 
+        @param checkpoint_folder : None or Path object specifying path of foldre where checkpoints are saved.
+        """
         super(Sentiment140, self).__init__(cfg, checkpoint_folder)
         
         self.data = pd.read_csv("raw_data_sets/Sentiment140/cleaned_data.csv", encoding="utf-8")[['target', 'text']]
@@ -24,55 +29,48 @@ class Sentiment140(BaseLoader):
             self.tokenizer_path = cfg.TOKENIZER_PATH
         except AttributeError:
             self.tokenizer_path = None        
-
     
     def set_tokenizer(self, text):
+        """
+        Set tokenizer by loading existing tokenzier if path provided.
+        Else create new tokenizer and fit on the text provided. Saved in the 
+        raw_data_sets/Sentiment140/ folder so that it can be reused later.
 
-        # load if config specified a file
+        @param text : Array of text from the DataFrame loaded from csv.
+        """
         if self.tokenizer_path is not None:
             with open(self.tokenizer_path, 'rb') as handle:
                 self.tokenizer = pickle.load(handle)
         else:
-            # create a tokenizer
             self.tokenizer = Tokenizer()
-            # fit the tokenizer in the train text
             self.tokenizer.fit_on_texts(text)
-
-            # saving tokenizer
             with open("raw_data_sets/Sentiment140/" + self.checkpoint_folder.stem + ".pickle", 'wb') as handle:
                 pickle.dump(self.tokenizer, handle, protocol = pickle.HIGHEST_PROTOCOL)
     
     def create_dataset(self):
+        """
+        Creates dataset from the cleaned version. Uses the tokenizer
+        to convert text to sequence and pads them.
+        Converts 0, 4 label to 0, 1 label.
+
+        @return Tuple<Tensor> where first is the input tensor and second is
+                the target tensor.
+        """
         
-        # create a label encoder
         encoder = LabelEncoder()
-        # enconde labels (0 or 1) in train data
         encoder.fit(self.data['target'].to_list())
 
-        # transform labels in y_train and y_test data to the encoded ones
         y = encoder.transform(self.data['target'].to_list())
         
-        # reshape y_train and y_test data
         y = y.reshape(-1, 1)
 
         print("Tokenizing text...")
         self.set_tokenizer(self.data['text'])
 
-        # get max length of the train data
         max_length = max([len(s.split()) for s in self.data['text']])
-
-        # pad sequences in x_train data set to the max length
         x = pad_sequences(self.tokenizer.texts_to_sequences(self.data['text']),
                                 maxlen = max_length)
         print("...Tokenized")
 
-        print("x shape: ", x.shape)
-        print("y shape:", y.shape)
-
         return (torch.tensor(x).type(torch.LongTensor).to(self.device), 
                 torch.tensor(y).type(torch.FloatTensor).to(self.device).squeeze())
-            
-    def load_dataset(self, test_split_ratio=0.2):
-        train, test = super().load_dataset(test_split_ratio)
-
-        return train[0], train[1], test[0], test[1]
