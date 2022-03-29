@@ -1,46 +1,54 @@
 
-from models.layers.dropouts import StandardDropout, RNNDrop, Standout, GradBasedDropout
 import torch
 import torch.nn as nn
 
+from models.layers.dropouts import StandardDropout, RNNDrop, Standout, GradBasedDropout
 
-# Setting devices
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-class BLSTM(nn.Module):
-    def __init__(self, embedding_dim, hidden_dim, bidirectional, batch_first):
-        super(BLSTM, self).__init__()
-
-        self.hidden_dim = hidden_dim
-
-        self.blstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=bidirectional, batch_first=batch_first)
-
-    def forward(self, x):
-        
-        h0 = torch.zeros(2, x.size(0), self.hidden_dim).to(device)
-        c0 = torch.zeros(2, x.size(0), self.hidden_dim).to(device)
-        
-        x, _ = self.blstm(x, (h0, c0))
-        
-        return x
 
 class DropoutAfterBLSTM(nn.Module):
-    def __init__(self, dropout_prob, embedding_dim, hidden_dim, bidirectional, batch_first):
+    """
+    BLSTM layer with a single dropout at the end.
+    """
+
+    def __init__(self, dropout_prob, embedding_dim, hidden_dim):
+        """
+        @param dropout_prob  : Dropout rate for standard dropout.
+        @param embedding_dim : Embeddng dimension of the BLSTM layer.
+        @param hidden_dim    : Output dimension of the BLSTM layer. 
+        """
         super(DropoutAfterBLSTM, self).__init__()
 
         self.blstm = PerStepBLSTM(embedding_dim, hidden_dim, None)
         self.dropout = StandardDropout(dropout_prob)
     
     def forward(self, inputs):
+        """
+        Forward pass of the layer.
+        
+        @param inputs : Input tensor of the layer
 
+        @return Output tensor of the layer.
+        """
         x = self.blstm(inputs)
         if self.training:
             x = self.dropout(x)
         return x
 
-class PerStepBLSTM(nn.Module):
 
-    def __init__(self, embedding_dim, hidden_dim, dropout_method, drop_prob=0.2, keep_high_magnitude=True):
+class PerStepBLSTM(nn.Module):
+    """
+    Custom BLSTM implementation.
+    """
+
+    def __init__(self, embedding_dim, hidden_dim, dropout_method, drop_prob=0.2):
+        """
+        @param embedding_dim  : Embeddng dimension of the BLSTM layer.
+        @param hidden_dim     : Output dimension of the BLSTM layer. 
+        @param dropout_method : String object labeling which dropout method to use.
+        @param drop_prob      : Dropout rate for standard dropout.
+        """
         super(PerStepBLSTM, self).__init__()
 
         self.hidden_dim = hidden_dim
@@ -65,9 +73,14 @@ class PerStepBLSTM(nn.Module):
         self.backward_cell_hh = nn.Linear(hidden_dim, hidden_dim)
         self.backward_out_hh = nn.Linear(hidden_dim, hidden_dim)
 
-        self.setup_dropout_layer(dropout_method, drop_prob, keep_high_magnitude)
+        self.setup_dropout_layer(dropout_method, drop_prob)
 
-    def setup_dropout_layer(self, dropout_method, drop_prob, keep_high_magnitude):
+    def setup_dropout_layer(self, dropout_method, drop_prob):
+        """
+        Set up dropout booleans and layers accordingly.
+        @param dropout_method : String object labeling which dropout method to use.
+        @param drop_prob      : Dropout rate for standard dropout.
+        """
         self.rnn_drop = False
         self.recurrent_drop = False
         self.h0_drop = False
@@ -78,7 +91,8 @@ class PerStepBLSTM(nn.Module):
             self.dropout = StandardDropout(drop_prob)
             self.h0_drop = True
         elif dropout_method == "RNNDrop":
-            self.dropout = RNNDrop(drop_prob, True)
+            self.forward_drop = RNNDrop(drop_prob)
+            self.backward_drop = RNNDrop(drop_prob)
             self.rnn_drop = True
         elif dropout_method == "RecurrentDropout":
             self.dropout = StandardDropout(drop_prob)
@@ -97,17 +111,23 @@ class PerStepBLSTM(nn.Module):
             self.grad_drop = True
 
     def forward(self, x):
-        # lstm_inputs = x.unbind(1)
-        # reverse_lstm_inputs = lstm_inputs[::-1]
+        """
+        Forward pass of the layer.
+        
+        @param inputs : Input tensor of the layer
+
+        @return Output tensor of the layer.
+        """
         
         outputs = torch.zeros(x.shape[0], x.shape[1], self.hidden_dim*2).to(device)
         
-        
         forward_h0, forward_c0 = (torch.zeros(x.size(0), self.hidden_dim).to(device), torch.zeros(x.size(0), self.hidden_dim).to(device))
         backward_h0, backward_c0 = (torch.zeros(x.size(0), self.hidden_dim).to(device), torch.zeros(x.size(0), self.hidden_dim).to(device))
-
+        
+        # reset RNNDrop mask for the whole batch
         if self.training and self.rnn_drop:
-            self.dropout.reset_mask((x.size(0), self.hidden_dim))
+            self.forward_drop.reset_mask((x.size(0), self.hidden_dim))
+            self.backward_drop.reset_mask((x.size(0), self.hidden_dim))
 
         for i in range(x.shape[1]):
             forward_step_input = x[:,i,:]
@@ -119,6 +139,7 @@ class PerStepBLSTM(nn.Module):
             forward_cell_hh = self.forward_cell_hh(forward_h0)
 
             backward_step_input = x[:, x.shape[1]-(i+1), :]
+
             backward_ingate = self.backward_in_ih(backward_step_input) + self.backward_in_hh(backward_h0)
             backward_forgetgate = self.backward_forget_ih(backward_step_input) + self.backward_forget_hh(backward_h0)
             backward_outgate = self.backward_out_ih(backward_step_input) + self.backward_out_hh(backward_h0)
@@ -156,14 +177,14 @@ class PerStepBLSTM(nn.Module):
             
             forward_c0 = (forward_forgetgate * forward_c0) + (forward_ingate * forward_cellgate)
             if self.training and self.rnn_drop:
-                forward_c0 = self.dropout(forward_c0) 
+                forward_c0 = self.forward_drop(forward_c0) 
 
             forward_h0 = forward_outgate * torch.tanh(forward_c0)
                 
             backward_c0 = (backward_forgetgate * backward_c0) + (backward_ingate * backward_cellgate)
             if self.training and self.rnn_drop:
-                backward_c0 = self.dropout(backward_c0)
-            
+                backward_c0 = self.backward_drop(backward_c0)
+                
             backward_h0 = backward_outgate * torch.tanh(backward_c0)
             
             if self.training and self.h0_drop:
@@ -172,12 +193,5 @@ class PerStepBLSTM(nn.Module):
 
             outputs[:, i, :self.hidden_dim] = forward_h0
             outputs[:, x.shape[1]-(i+1), self.hidden_dim:] = backward_h0
-            # forward_lstm_outputs.append(forward_h0)
-            # backward_lstm_outputs.append(backward_h0)
-        
-        # forward_lstm_outputs = torch.stack(forward_lstm_outputs, dim=1)
-        # backward_lstm_outputs = torch.stack(backward_lstm_outputs, dim=1)
-
-        # x = torch.cat([forward_lstm_outputs, backward_lstm_outputs], dim=-1)
 
         return outputs
