@@ -61,14 +61,3 @@ class BoWKEATS(KEATSBase):
             targets = targets.type(torch.LongTensor)
         return bows.to(self.device), targets.to(self.device)
     
-    def load_dataset(self, test_split_ratio=0.2):
-        """
-        Load dataset overwritten so return is a Tupe<List> instead 
-        of Tuple<Tuple<List>>. Seperates each pair of X,y into 
-        x_train, y_train, x_test, y_test.
-
-        @return Tuple<Tensor> where normally expected to be 4 tensors. 
-                X_train, y_train, X_test, y_test
-        """
-        dataset_train, dataset_test = super().load_dataset(test_split_ratio)
-        return *dataset_train, *dataset_test

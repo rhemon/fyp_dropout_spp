@@ -40,14 +40,3 @@ class MNISTLoader(BaseLoader):
         x_test = x_test.view(x_test.shape[0], -1).type(torch.FloatTensor)
 
         return torch.cat([x_train, x_test]).to(self.device), torch.cat([y_train, y_test]).type(torch.LongTensor).to(self.device)
-    
-    def load_dataset(self, test_split_ratio=0.2):
-        """
-        Load dataset over written to seraparte train test
-        tensors instead of sending nested tuple.
-
-        @return Tuple<Tensor> where it is expected to be 4 tensors. 
-                x_train, y_train, x_test, y_test
-        """
-        train, test = super().load_dataset(test_split_ratio)
-        return train[0], train[1], test[0], test[1]

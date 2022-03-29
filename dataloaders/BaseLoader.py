@@ -128,8 +128,8 @@ class BaseLoader:
         @param test_split_ration : Floating value (default 0.2) specifying how much of
                                    full dataset goes into test set.
         
-        @return Tuple<Tuple<Tensor>> where normally expected to be: 
-                (X_train, y_train), (X_test, y_test)
+        @return Tuple<Tensor> where normally expected to be 4 tensors. 
+                X_train, y_train, X_test, y_test
         """
         datasets = self.create_dataset() ## [x, y]
         classes = list(datasets[-1].unique())
@@ -159,4 +159,4 @@ class BaseLoader:
         print("Train:", dataset_train[0].shape[0])
         print("Test:", dataset_test[0].shape[0])
 
-        return dataset_train, dataset_test
+        return *dataset_train, *dataset_test
