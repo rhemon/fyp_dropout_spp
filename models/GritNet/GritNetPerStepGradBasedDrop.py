@@ -50,7 +50,7 @@ class GritNetPerStepGradBasedDrop(GritNetNoDropout):
         """
         new_grads = torch.max(torch.abs(old_grads), torch.abs(cur_grads))
         new_grads = (new_grads * (((new_grads == torch.abs(old_grads)) * torch.sign(old_grads)).int() | 
-                                ((new_grads == torch.abs(cur_grads)) * torch.sign(cur_grads)).int()))
+                                    ((new_grads == torch.abs(cur_grads)) * torch.sign(cur_grads)).int()))
         return new_grads
 
     def update_per_iter(self):
