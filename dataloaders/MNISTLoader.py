@@ -4,17 +4,35 @@ from torchvision.transforms import transforms
 
 from dataloaders.BaseLoader import BaseLoader
 
+
 class MNISTLoader(BaseLoader):
+    """
+    MNISTLoader extending from BaseLoader to load
+    MNIST dataset from PyTorch's datasets.
+    """
 
     def __init__(self, cfg, checkpoint_folder=None):
+        """
+        MNISTLoader Constructor. Sets up base attributes and loads train and test MNIST
+        dataset from PyTorch datasets.
+
+        @param cfg               : SimpleNamespace object created from json object 
+        @param checkpoint_folder : None or Path object specifying path of foldre where checkpoints are saved.
+        """
         super(MNISTLoader, self).__init__(cfg)
 
         self.train_data = datasets.MNIST(root='raw_data_sets/', train=True, transform=transforms.ToTensor(), download=True)
         self.test_data = datasets.MNIST(root='raw_data_sets/', train=False, transform=transforms.ToTensor(), download=True)
 
-
     def create_dataset(self):
-        
+        """
+        Flattens the 2D images into 1D and combines PyTorch's
+        train and test MNIST dataset into 1. Letting BaseLoader's
+        load_dataset handle the train test split for this project.
+
+        @return Tuple<Tensor> where first is the inpput tensor and second is the
+                target tensor labeled from 0-9. Loaded into GPU if available.
+        """
         x_train, y_train = self.train_data.data, self.train_data.targets
         x_test, y_test = self.test_data.data, self.test_data.targets
 
@@ -24,5 +42,12 @@ class MNISTLoader(BaseLoader):
         return torch.cat([x_train, x_test]).to(self.device), torch.cat([y_train, y_test]).type(torch.LongTensor).to(self.device)
     
     def load_dataset(self, test_split_ratio=0.2):
+        """
+        Load dataset over written to seraparte train test
+        tensors instead of sending nested tuple.
+
+        @return Tuple<Tensor> where it is expected to be 4 tensors. 
+                x_train, y_train, x_test, y_test
+        """
         train, test = super().load_dataset(test_split_ratio)
         return train[0], train[1], test[0], test[1]
