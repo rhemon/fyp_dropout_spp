@@ -2,9 +2,23 @@ import torch
 
 from dataloaders.KEATSBase import KEATSBase
 
+
 class BoWKEATS(KEATSBase):
+    """
+    Bag of Words (BoW) representation of KEATS dataset.
+    Inherited from KEATSBase and overwrites
+    create_dataset implemnetation.
+    """
 
     def create_bow_record(self, sid):
+        """
+        Return records of a single student in BoW representation.
+
+        @param sid: Student ID 
+
+        @return Tuple<Tensor> where it is two tensor, first is the 1D input
+                tensor and second is the target tensor with a single value.
+        """
         student_activities = self.logs[self.logs['Id'] == sid]
 
         target = self.get_final_mark(sid)
@@ -22,7 +36,14 @@ class BoWKEATS(KEATSBase):
         return (bow, target)
         
     def create_dataset(self):
-        
+        """
+        Create dataset over written to loop through each student
+        and generate the BoW representation of the complete dataset.
+
+        @return Tuple<Tensor> where first is the BoW input tensor and second
+                is the target tensor. Both tensor are loaded onto GPU if
+                available.
+        """
         ids = self.marks['Id'].unique()
         
         bows = []
@@ -41,5 +62,13 @@ class BoWKEATS(KEATSBase):
         return bows.to(self.device), targets.to(self.device)
     
     def load_dataset(self, test_split_ratio=0.2):
+        """
+        Load dataset overwritten so return is a Tupe<List> instead 
+        of Tuple<Tuple<List>>. Seperates each pair of X,y into 
+        x_train, y_train, x_test, y_test.
+
+        @return Tuple<Tensor> where normally expected to be 4 tensors. 
+                X_train, y_train, X_test, y_test
+        """
         dataset_train, dataset_test = super().load_dataset(test_split_ratio)
         return *dataset_train, *dataset_test
