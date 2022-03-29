@@ -63,7 +63,7 @@ if __name__ == '__main__':
             cfg = json.load(cfg_file, object_hook=lambda d: SimpleNamespace(**d))
         
         train_path = Path(args.train_path)
-        checkpiont_dir = get_checkpoint_folder(cfg)
+        checkpoint_dir = get_checkpoint_folder(cfg)
     elif args.model_dir:
         checkpoint_dir = Path(args.model_dir)
         config_file = [file for file in os.listdir(checkpoint_dir) if file.endswith("json")][0]
@@ -74,10 +74,10 @@ if __name__ == '__main__':
     else:
         raise Exception("No configuration provided")
 
-    dataprocessor = getattr(importlib.import_module(f"dataloaders.{cfg.DATASET_PROCESSOR}"), cfg.DATASET_PROCESSOR)(cfg, checkpiont_dir)
+    dataprocessor = getattr(importlib.import_module(f"dataloaders.{cfg.DATASET_PROCESSOR}"), cfg.DATASET_PROCESSOR)(cfg, checkpoint_dir)
     X_train, y_train, X_test, y_test = dataprocessor.load_dataset()
     model = getattr(importlib.import_module(f"models.{cfg.MODEL_DIR}.{cfg.MODEL}"), cfg.MODEL)(
-                        cfg, checkpiont_dir, input_dim=X_train.shape[-1], dataprocessor=dataprocessor)
+                        cfg, checkpoint_dir, input_dim=X_train.shape[-1], dataprocessor=dataprocessor)
     
     if train_mode:
         model.fit(X_train, y_train)
