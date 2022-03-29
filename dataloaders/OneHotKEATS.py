@@ -1,33 +1,30 @@
-import numpy as np
-import pandas as pd
-import datetime
 import torch
-
-from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle 
 
 from dataloaders.KEATSBase import KEATSBase
 
+
 class OneHotKEATS(KEATSBase):
     """
-    Class to laod KEATS dataset as OHV input, although actualy output is essentially indexes of the onehot vector position
-    as data will be used in a GritNet model that uses Embedding layer.
-
-    Takes in columns type and output type from cfg
-    Columns type to specify which fields to use. Output type Binary or multivariative (support not added yet) 
+    OHV representation of KEATS dataset.
+    Extends from KEATSBase overwriting the implementation of 
+    create_dataset.
     """    
 
     def create_onehot_record(self, sid):
         """
-        Creates record for each student, <number_of_activities, 2> first index is the index of event
-        second is the index of time.
+        Creates record for each student, <number_of_activities, 2> first index 
+        is the index of event second is the index of time-delta.
+
+        @param sid : Student Id.
+        
+        @return Tuple<Tensor> where first is the OHV input and second tensor is
+                target value.
         """
         student_activities = self.logs[self.logs['Id'] == sid]
         if len(student_activities) == 0:
             return None
         student_activities = student_activities.sort_values(by=["Time"]).reset_index(drop=True)
 
-        # For now only taking final mark in consideration
         target = self.get_final_mark(sid)
         
         index_input = torch.zeros((len(student_activities), 2))
@@ -39,6 +36,10 @@ class OneHotKEATS(KEATSBase):
             event = event[:-1]
             event_time = each_activity['Time']
             event_index = self.convert_event_to_index(event)
+
+            # OHV representation combines the vector into single vector
+            # so index is added on top of the total number of unique
+            # events
             event_time_index = len(self.unique_events) + self.convert_time_to_index(event_time)
             
             index_input[i, 0] = event_index
@@ -48,8 +49,12 @@ class OneHotKEATS(KEATSBase):
 
     def create_dataset(self):
         """
-            Pads every record with max time step length, and stores lenght of each record separately
-            so that it can be used when training.
+        Returns OHV representation of the KEATS dataset.
+        Pads every record with max time step length, and stores lenght of each record separately
+        so that it can be used when training.
+
+        @return Tuple<Tensor> first tensor the input tensors and second
+                is the target tensors.
         """
         ids = self.marks['Id'].unique()
 
@@ -64,24 +69,17 @@ class OneHotKEATS(KEATSBase):
                 if ii.size(0) > max_t_step:
                     max_t_step = ii.size(0)
                 targets.append(y)
-        lengths = [] 
+        
         inputs = torch.zeros((len(indexes), max_t_step, 2))
-        lengths = torch.zeros((len(indexes),))
         for i, ii in enumerate(indexes):
-            inputs[i, :ii.size(0), :] = ii[:, :] + 1 # 0 should be padding
-            lengths[i] = ii.size(0)
+            # 0 should be padding
+            inputs[i, :ii.size(0), :] = ii[:, :] + 1 
 
         targets = torch.cat(targets, axis=0)
+        
+        # for grades conver to LongTensor instead of FloatTensor
+        # to work with NLLLoss
         if targets.max()>1:
             targets = targets.type(torch.LongTensor)
-        return inputs, lengths, targets
-
-    def load_dataset(self, test_split_ratio=0.2):
-        dataset_train, dataset_test = super().load_dataset(test_split_ratio)
-        # return ((dataset_train[0].type(torch.LongTensor).to(self.device), 
-        #         dataset_train[1]), 
-        #         dataset_train[2].to(self.device), 
-        #         (dataset_test[0].type(torch.LongTensor).to(self.device), 
-        #         dataset_test[1]), 
-        #         dataset_test[2].to(self.device)) 
-        return dataset_train[0].type(torch.LongTensor).to(self.device), dataset_train[2].to(self.device), dataset_test[0].type(torch.LongTensor).to(self.device), dataset_test[2].to(self.device)
+        
+        return inputs.to(self.device), targets.to(self.device)
