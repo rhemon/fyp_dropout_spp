@@ -1,3 +1,4 @@
+# standard config :
 cfg = {
     "MODEL": "LinearModelWeightedDrop",
     "MODEL_DIR": "LinearModel",
@@ -22,6 +23,8 @@ cfg = {
     ],
     "PROB_METHOD": "TANH"
 }
+
+# All combinations of differet dataset, models and split:
 changes = [
     # ["bow_nd_binary.json", "LinearModelNoDropout", "LinearModel", "BCELoss",
     #  "BoWKEATS", "BINARY", "ORIGINAL", 4, 10, 10, True, "NORM", None],
@@ -323,12 +326,12 @@ changes = [
     #  "Sentiment140", "BINARY", "ORIGINAL", 32, 1000, 10, True, "NORM", [150000,350000]],
     #  ["sentiment_pss_binary_30_70.json", "SimpleSentimentPerStepStandout", "SimpleSentiment", "BCELoss",
     #  "Sentiment140", "BINARY", "ORIGINAL", 32, 1000, 10, True, "NORM", [150000,350000]],
-
 ]
 
 import json
 import os
 
+# iterate through all combination and write a json file for each
 for each_change in changes:
     print("here")
     with open(".\\configs\\"+each_change[0], 'w') as f:
@@ -348,6 +351,7 @@ for each_change in changes:
 
         json.dump(c, f, indent=4)
 
+# iterate through all json file and create a single command training all files
 files = os.listdir('./configs')
 start_command = "python main.py -tp .\\configs\\"
 full_command = ""
