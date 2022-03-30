@@ -82,4 +82,4 @@ class OneHotKEATS(KEATSBase):
         if targets.max()>1:
             targets = targets.type(torch.LongTensor)
         
-        return inputs.to(self.device), targets.to(self.device)
+        return inputs.type(torch.LongTensor).to(self.device), targets.to(self.device)
