@@ -22,8 +22,7 @@ class LinearModelGradBasedDrop(LinearModelNoDropout):
         """
         super(LinearModelGradBasedDrop, self).__init__(cfg, train_path, input_dim, dataprocessor, **kwargs)
         self.prob_method = cfg.PROB_METHOD
-        self.grads = None
-    
+        
     def set_model(self, input_dim, hidden_dim, target_size):
         """
         Initialize LinearModel with a linear layer and gradient based dropout.
@@ -37,23 +36,9 @@ class LinearModelGradBasedDrop(LinearModelNoDropout):
 
     def update_per_iter(self):
         """
-        Overwriting update_per_iter method to update max gradient
+        Overwriting update_per_iter method to update prob 
         at each iteration.
         """
         cur_grads = self.model.linear_layer.fc.weight.grad.detach()
-        if self.grads is None:
-            self.grads = cur_grads
-        else:
-            new_grads = torch.max(torch.abs(self.grads), torch.abs(cur_grads))
-            new_grads = (new_grads * (((new_grads == torch.abs(self.grads)) * torch.sign(self.grads)).int() | 
-                                        ((new_grads == torch.abs(cur_grads)) * torch.sign(cur_grads)).int()))
-            self.grads = new_grads
-
-    def update_per_epoch(self):
-        """
-        Ovewriting update_per_epoch method to update keep prob 
-        by using the max graident.
-        """
-        self.model.linear_layer.drop.update_keep_prob(self.grads, self.prob_method)
-        # Reset grads
-        self.grards = None
+        self.model.linear_layer.drop.update_keep_prob(cur_grads, self.prob_method)
+        
