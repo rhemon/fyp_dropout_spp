@@ -83,7 +83,7 @@ if __name__ == '__main__':
         model.fit(X_train, y_train)
         fname = 'results.txt'
     else:
-        model.model.load_state_dict(torch.load(checkpoint_dir/Path("model.pt"))['model_state_dict'])
+        model.model.load_state_dict(torch.load(checkpoint_dir/Path("model.pt"), map_location=device)['model_state_dict'])
         fname = 'evaluation.txt'
     
     evaluate(cfg, model, X_train, X_test, y_train, y_test, fname)
