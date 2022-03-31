@@ -11,6 +11,11 @@ from dataloaders.BaseLoader import BaseLoader
 class Sentiment140(BaseLoader):
     """
     Sentiment140 dataset loader. Extended from BaseLoader.
+
+    Follows Karina Reyes's article on Sentiment Analysis on Tweet using LSTM
+    to clean up the dataset and tokenize. (set_tokenizer and create_dataset)
+    https://medium.com/@karyrs1506/sentiment-analysis-on-tweets-with-lstm-22e3bbf93a61
+ 
     """
 
     def __init__(self, cfg, checkpoint_folder):
@@ -22,6 +27,8 @@ class Sentiment140(BaseLoader):
         """
         super(Sentiment140, self).__init__(cfg, checkpoint_folder)
         
+        # pre-cleaned data by following Reyes's code (code for this is in the data set notebook)
+        # https://medium.com/@karyrs1506/sentiment-analysis-on-tweets-with-lstm-22e3bbf93a61
         self.data = pd.read_csv("raw_data_sets/Sentiment140/cleaned_data.csv", encoding="utf-8")[['target', 'text']]
         self.data['text'] = self.data['text'].astype("str")
 

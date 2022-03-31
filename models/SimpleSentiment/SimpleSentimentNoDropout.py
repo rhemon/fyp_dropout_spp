@@ -61,6 +61,10 @@ class SimpleSentimentNoDropout(BaseModel):
     def fit_embedding_weights(self):
         """
         Load GloVe embedding weights.
+        
+        Following Reyes's article loading pre-trained GloVe embedding
+        weights in to SimpleSentiment's embedding layer.
+        https://medium.com/@karyrs1506/sentiment-analysis-on-tweets-with-lstm-22e3bbf93a61
         """
         vocab = self.dataprocessor.tokenizer.word_index
         with open('raw_data_sets/Sentiment140/glove.twitter.27B.200d.txt', 'rt', encoding='utf-8') as f:
