@@ -10,7 +10,7 @@ class SimpleSentimentNoDropout(BaseModel):
     SimpleSentiment with no droput
     """
 
-    def __init__(self, cfg, train_path, input_dim, dataprocessor, vocab_size=290713, embedding_dim=200, hidden_dim=128, target_size=1, seq_len=50, **kwargs):
+    def __init__(self, cfg, train_path, input_dim, dataprocessor, vocab_size=335507, embedding_dim=200, hidden_dim=128, target_size=1, seq_len=50, **kwargs):
         """
         Model constructor.
 
@@ -18,7 +18,7 @@ class SimpleSentimentNoDropout(BaseModel):
         @param train_path    : Path to checkpoint folder
         @param input_dim     : Model's input dimension
         @param dataprocessor : Data Loader
-        @param vocab_size    : Vocab dimension, defaulted to 290713.
+        @param vocab_size    : Vocab dimension, defaulted to 335507.
         @param embedding_dim : Embedding dimension. Defaulted to 200.
         @param hidden_dim    : BLSTM output dimension. Defaulted to 128.
         @param target_size   : Model output size. Defaulted to 1.
@@ -32,7 +32,7 @@ class SimpleSentimentNoDropout(BaseModel):
         """
         Initialize SimpleSentiment model with just PerStepBLSTM layer.
         
-        @param vocab_size     : Event dimension, defaulted to 290713.
+        @param vocab_size     : Event dimension, defaulted to 335507.
         @param embedding_dim : Embedding dimension. Defaulted to 200.
         @param hidden_dim    : BLSTM output dimension. Defaulted to 128.
         @param target_size   : Output dimension of the model.

@@ -12,7 +12,7 @@ class SimpleSentimentSingleDropout(SimpleSentimentNoDropout):
         """
         Initialize SimpleSentiment model with just DroputAfterBLSTM.
         
-        @param vocab_size     : Event dimension, defaulted to 290713.
+        @param vocab_size     : Event dimension, defaulted to 335507.
         @param embedding_dim : Embedding dimension. Defaulted to 200.
         @param hidden_dim    : BLSTM output dimension. Defaulted to 128.
         @param target_size   : Output dimension of the model.

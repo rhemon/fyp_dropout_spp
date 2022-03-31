@@ -6,7 +6,7 @@ class SimpleSentiment(nn.Module):
     SimpleSentiment implementation.
     """
     
-    def __init__(self, blstm_layer, vocab_size=290713, embedding_dim=200, hidden_dim=128, target_size=1, seq_len=50):
+    def __init__(self, blstm_layer, vocab_size=335507, embedding_dim=200, hidden_dim=128, target_size=1, seq_len=50):
         """
         Initialize layers of SimpleSentiment.
         BLSTM layer is taken as argument so that model with diffrent dropout can use
@@ -14,7 +14,7 @@ class SimpleSentiment(nn.Module):
         dropout methods.
 
         @param blstm_layer   : PyTorch Module object. Expected to be BLSTM layer (with or without dropout).
-        @param vocab_size    : Integer value. Defaulted to 290713, the total number of words.
+        @param vocab_size    : Integer value. Defaulted to 335507, the total number of words.
         @param embedding_dim : Integer value. Defaulted to 200, the dimension of embedding for each event
                                time-delta.
         @param hidden_dim    : Output dimension of the BLSTM layer. Defaulted to 128
