@@ -1,0 +1,36 @@
+{
+    "MODEL": "LinearModelGradBasedDrop",
+    "MODEL_DIR": "LinearModel",
+    "DATASET_PROCESSOR": "MNISTLoader",
+    "OUTPUT_TYPE": "NUMBERS",
+    "COLUMNS_TYPE": "OHV_ALL",
+    "LOAD_METHOD": "ORIGINAL",
+    "LOSS": "NLLLoss",
+    "DROP_PROB": 0.2,
+    "OPTIMIZER": "SGD",
+    "LR": 0.001,
+    "BATCH_SIZE": 32,
+    "EPOCH": 10,
+    "PRINT_EVERY": 1000,
+    "EVALUATION_METHODS": [
+        "ACCURACY",
+        "CONFUSION_MATRIX",
+        "PRECISION",
+        "RECALL",
+        "F1_SCORE",
+        "GMEAN"
+    ],
+    "PROB_METHOD": "TANH",
+    "CLASS_SPLIT": [
+        5000,
+        5000,
+        5000,
+        5000,
+        5000,
+        5000,
+        5000,
+        5000,
+        5000,
+        5000
+    ]
+}

@@ -2,6 +2,8 @@ model_cpts
 *.pyc
 .ipynb_checkpoints
 TODO.txt
-configs
+configs/*.json
+!configs/example_config.json
 raw_data_sets
 __pycache__
+notebooks
