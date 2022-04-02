@@ -4,18 +4,16 @@
 6CCS3PRJ Final Year Individual Project of Ridhwanul Haque, k1924212, 1913343
 
 ## Declaration
----
 
 I verify that I am the sole author of the programs contained in this folder, except where explicitly stated to the contrary.
 
 ## Environment Setup Instruction
----
 
 <br/>
 
 ### Python and Libraries
 
-Python 3.8.11 was used throughout the project and recommended to use the same version. The project was using the setup provided by Anaconda recommended to install anaconda and create a python 3 environment with following code:
+Python 3.8.11 was used throughout the project and recommended to use the same version. The project was using the setup provided by Anaconda hence recommended to install anaconda and create a python 3 environment with following code:
 
 ```
 >>> conda create -n py3 python=3.8.11
@@ -49,14 +47,13 @@ Files in `MNIST` folder is not required as `MNISTLoader` uses the dataset coming
 
 ### Optional Downloads
 
-You can download pre trained checkpoints to evaluate or further train on them. All models discussed in the final report have their checkpoints and can be downloaded from this [Google Drive Link](). To evaluate using the CLI, checkpoints must be downloaded into a `model_cpts` directory (placed in the root folder). This is also due to the fact that evaluation mode is hard coded for that. 
+You can download pre trained checkpoints to evaluate or further train on them. All models discussed in the final report have their checkpoints and can be downloaded from this [Google Drive Link](https://drive.google.com/drive/folders/1p4x7gf2q0Qvfk0ecxOhAscUcps7w6owi?usp=sharing). To evaluate using the CLI, checkpoints must be downloaded into a `model_cpts` directory (placed in the root folder). This is also due to the fact that evaluation mode is hard coded for that. 
 
 ### Notebook Downloads
 
 Notebooks are not needed in any of the execution for this project. However they can also be downloaded from [here](https://drive.google.com/drive/folders/1jYwQHZ2399eFM8tR1x49xeYwfCZ0RMVh?usp=sharing). Here, `MNIST_Gradient_Based_Dropout.ipynb` contains the code and results of models with different gradient based dropout method. The checkpoints for this is not available in previously downloaded checkpoints and only executed on Google Colab. The remaining notebooks are in pdf format, however the original ipynb files are in the `raw_data_sets` previously downloaded.
 
 ## Configuration File
----
 
 To train models a json file specifying the configuration must be passed when running the CLI. An example json file is included in the repository `configs/example_config.json`. The configuration variables are also explained in the final report. Here are same key variables that can be modified to train different models on different dataset and splits:
 
@@ -72,7 +69,6 @@ The other variables are like hyper parameters for training and evaluating models
 The `get_run_command.py` file is a helper script written to create config files for all the models trained during the project. The list `changes` is commented in the script, and be modified to generate specific files. At the end also iterates through the created config file and returns the CLI command to train all the files. Essentially all train commands are separted using `;` so that CLI continues training training one after another.
 
 ## CLI
----
 
 Train command:
 ```
