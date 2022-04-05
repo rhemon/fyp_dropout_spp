@@ -33,7 +33,7 @@ Install the required libraries by running:
 >>> pip install -r requirements.txt
 ```
 
-Here PyTorch is installed with CUDA 11.1 support. If you plan to use GPU and require different version's support install accordingly. A list of previous versions can be found [here](https://pytorch.org/get-started/previous-versions/).
+Here PyTorch is installed for CPU only. If you plan to use GPU accoding cuda support should also be installed. A list of supported versions can be found and installed from [here](https://pytorch.org/get-started/previous-versions/).
 
 Alternatively the code can work with CPU as well but will be significantly slow when training the BLSTM based models on KEATS and Sentiment140 dataset.
 
